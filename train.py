@@ -107,6 +107,7 @@ def main(config):
     for k in aves_keys:
         trlog[k] = []
 
+    # 使用多个epoch寻找最佳的初始参数，使得模型在少量梯度更新后能有较好的表现
     for epoch in range(start_epoch, config['epoch'] + 1):
         timer_epoch.start()
         aves = {k: utils.AverageMeter() for k in aves_keys}
@@ -116,6 +117,8 @@ def main(config):
         writer.add_scalar('lr', optimizer.param_groups[0]['lr'], epoch)
         np.random.seed(epoch)
 
+        # MAML的训练是基于task的，而这里的每个task就相当于普通深度学习模型训练过程中的一条训练数据。
+        # 在每一代中，我们会选出多个task（即多个训练数据），然后对每个task进行内环更新，最后再进行一次外环更新。
         for data in tqdm(train_loader, desc='meta-train', leave=False):
             x_shot, x_query, y_shot, y_query = data
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
@@ -144,6 +147,8 @@ def main(config):
             optimizer.step()
 
         # meta-val
+        # 在每一代训练结束后，我们会在验证集上评估模型的性能，以便观察模型的泛化能力。
+        # 也许可以使用Early Stopping来防止过拟合。
         if eval_val:
             model.eval()
             np.random.seed(0)
