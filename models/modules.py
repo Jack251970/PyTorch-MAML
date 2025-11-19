@@ -11,15 +11,15 @@ __all__ = ['Module', 'Conv2d', 'Linear', 'BatchNorm2d', 'Sequential',
 
 def get_child_dict(params, key=None):
     """
-  Constructs parameter dictionary for a network module.
+    Constructs parameter dictionary for a network module.
 
-  Args:
+    Args:
     params (dict): a parent dictionary of named parameters.
     key (str, optional): a key that specifies the root of the child dictionary.
 
-  Returns:
+    Returns:
     child_dict (dict): a child dictionary of model parameters.
-  """
+    """
     if params is None:
         return None
     if key is None or (isinstance(key, str) and key == ''):

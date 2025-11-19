@@ -213,6 +213,8 @@ class MAML(Module):
                 params.pop(name)
 
         logits = []
+
+        # 在支持集上进行内环更新，得到更新后的参数
         for ep in range(x_shot.size(0)):
             # inner-loop training
             self.train()
@@ -225,6 +227,7 @@ class MAML(Module):
             # inner-loop validation
             with torch.set_grad_enabled(meta_train):
                 self.eval()
+                # 这里我们使用之前保存的updated_params进行前向传播，得到查询集的logits
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
             logits.append(logits_ep)
 
