@@ -96,6 +96,8 @@ class MAML(Module):
             logits = self._inner_forward(x, params, episode)
             loss = F.cross_entropy(logits, y)
             # backward pass
+            # 不调用backward，而是直接计算loss关于params的梯度
+            # 这样的话，模型的参数暂时不会更新，所有任务都会从同一个初始参数开始进行内环更新
             grads = autograd.grad(loss, params.values(),
                                   create_graph=(not detach and not inner_args['first_order']),
                                   only_inputs=True, allow_unused=True)
@@ -214,9 +216,11 @@ class MAML(Module):
 
         logits = []
 
-        # 在支持集上进行内环更新，得到更新后的参数
+        # 对于每一个task，进行内环更新并计算查询集上的表现
+        # 对于每一个任务，它们初始化的参数都是相同的（即meta-learnt的初始参数，对应于params）
+        # 然后通过支持集进行若干次梯度更新，得到更新后的参数
         for ep in range(x_shot.size(0)):
-            # inner-loop training
+            # inner-loop training: 更新一次参数
             self.train()
             if not meta_train:
                 for m in self.modules():
@@ -224,10 +228,9 @@ class MAML(Module):
                         m.eval()
             updated_params = self._adapt(
                 x_shot[ep], y_shot[ep], params, ep, inner_args, meta_train)
-            # inner-loop validation
+            # inner-loop validation: 计算更新后参数在查询集上的表现，并记录梯度
             with torch.set_grad_enabled(meta_train):
                 self.eval()
-                # 这里我们使用之前保存的updated_params进行前向传播，得到查询集的logits
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
             logits.append(logits_ep)
 

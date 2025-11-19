@@ -107,7 +107,8 @@ def main(config):
     for k in aves_keys:
         trlog[k] = []
 
-    # 使用多个epoch寻找最佳的初始参数，使得模型在少量梯度更新后能有较好的表现
+    # 使用多个epoch不断训练寻找最佳的初始参数，使得模型在少量梯度更新后能有较好的表现
+    # 一个train_loader中所提供的多个Batch of tasks不一定能确保最终的收敛，因此在工程中应当用多个epoch来训练模型
     for epoch in range(start_epoch, config['epoch'] + 1):
         timer_epoch.start()
         aves = {k: utils.AverageMeter() for k in aves_keys}
@@ -120,7 +121,7 @@ def main(config):
         # MAML的训练是基于task的，而这里的每个task就相当于普通深度学习模型训练过程中的一条训练数据。
         # 在每一代中，我们会选出多个task（即多个训练数据），然后对每个task进行内环更新，最后再进行一次外环更新。
         # train_loader中每一个data对应一个task，包括支持集和查询集。
-        for data in tqdm(train_loader, desc='meta-train', leave=False):
+        for data in tqdm(train_loader, desc='meta-train', leave=False):  # 获取多个Batch of tasks并进行训练
             x_shot, x_query, y_shot, y_query = data
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
             x_query, y_query = x_query.cuda(), y_query.cuda()
