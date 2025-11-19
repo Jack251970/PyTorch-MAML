@@ -119,6 +119,7 @@ def main(config):
 
         # MAML的训练是基于task的，而这里的每个task就相当于普通深度学习模型训练过程中的一条训练数据。
         # 在每一代中，我们会选出多个task（即多个训练数据），然后对每个task进行内环更新，最后再进行一次外环更新。
+        # train_loader中每一个data对应一个task，包括支持集和查询集。
         for data in tqdm(train_loader, desc='meta-train', leave=False):
             x_shot, x_query, y_shot, y_query = data
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
