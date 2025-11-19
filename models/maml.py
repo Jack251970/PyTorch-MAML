@@ -75,22 +75,22 @@ class MAML(Module):
 
     def _inner_iter(self, x, y, params, mom_buffer, episode, inner_args, detach):
         """
-    Performs one inner-loop iteration of MAML including the forward and 
-    backward passes and the parameter update.
+        Performs one inner-loop iteration of MAML including the forward and
+        backward passes and the parameter update.
 
-    Args:
-      x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
-      y (int tensor, [n_way * n_shot]): per-episode support set labels.
-      params (dict): the model parameters BEFORE the update.
-      mom_buffer (dict): the momentum buffer BEFORE the update.
-      episode (int): the current episode index.
-      inner_args (dict): inner-loop optimization hyperparameters.
-      detach (bool): if True, detachs the graph for the current iteration.
+        Args:
+          x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
+          y (int tensor, [n_way * n_shot]): per-episode support set labels.
+          params (dict): the model parameters BEFORE the update.
+          mom_buffer (dict): the momentum buffer BEFORE the update.
+          episode (int): the current episode index.
+          inner_args (dict): inner-loop optimization hyperparameters.
+          detach (bool): if True, detachs the graph for the current iteration.
 
-    Returns:
-      updated_params (dict): the model parameters AFTER the update.
-      mom_buffer (dict): the momentum buffer AFTER the update.
-    """
+        Returns:
+          updated_params (dict): the model parameters AFTER the update.
+          mom_buffer (dict): the momentum buffer AFTER the update.
+        """
         with torch.enable_grad():
             # forward pass
             logits = self._inner_forward(x, params, episode)
@@ -125,20 +125,20 @@ class MAML(Module):
 
     def _adapt(self, x, y, params, episode, inner_args, meta_train):
         """
-    Performs inner-loop adaptation in MAML.
+        Performs inner-loop adaptation in MAML.
 
-    Args:
-      x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
-        (T: transforms, C: channels, H: height, W: width)
-      y (int tensor, [n_way * n_shot]): per-episode support set labels.
-      params (dict): a dictionary of parameters at meta-initialization.
-      episode (int): the current episode index.
-      inner_args (dict): inner-loop optimization hyperparameters.
-      meta_train (bool): if True, the model is in meta-training.
-      
-    Returns:
-      params (dict): model paramters AFTER inner-loop adaptation.
-    """
+        Args:
+          x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
+            (T: transforms, C: channels, H: height, W: width)
+          y (int tensor, [n_way * n_shot]): per-episode support set labels.
+          params (dict): a dictionary of parameters at meta-initialization.
+          episode (int): the current episode index.
+          inner_args (dict): inner-loop optimization hyperparameters.
+          meta_train (bool): if True, the model is in meta-training.
+
+        Returns:
+          params (dict): model paramters AFTER inner-loop adaptation.
+        """
         assert x.dim() == 4 and y.dim() == 1
         assert x.size(0) == y.size(0)
 
@@ -189,17 +189,17 @@ class MAML(Module):
 
     def forward(self, x_shot, x_query, y_shot, inner_args, meta_train):
         """
-    Args:
-      x_shot (float tensor, [n_episode, n_way * n_shot, C, H, W]): support sets.
-      x_query (float tensor, [n_episode, n_way * n_query, C, H, W]): query sets.
-        (T: transforms, C: channels, H: height, W: width)
-      y_shot (int tensor, [n_episode, n_way * n_shot]): support set labels.
-      inner_args (dict, optional): inner-loop hyperparameters.
-      meta_train (bool): if True, the model is in meta-training.
-      
-    Returns:
-      logits (float tensor, [n_episode, n_way * n_shot, n_way]): predicted logits.
-    """
+        Args:
+          x_shot (float tensor, [n_episode, n_way * n_shot, C, H, W]): support sets.
+          x_query (float tensor, [n_episode, n_way * n_query, C, H, W]): query sets.
+            (T: transforms, C: channels, H: height, W: width)
+          y_shot (int tensor, [n_episode, n_way * n_shot]): support set labels.
+          inner_args (dict, optional): inner-loop hyperparameters.
+          meta_train (bool): if True, the model is in meta-training.
+
+        Returns:
+          logits (float tensor, [n_episode, n_way * n_shot, n_way]): predicted logits.
+        """
         assert self.encoder is not None
         assert self.classifier is not None
         assert x_shot.dim() == 5 and x_query.dim() == 5
