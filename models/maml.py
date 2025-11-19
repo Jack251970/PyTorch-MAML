@@ -12,17 +12,17 @@ from .modules import get_child_dict, Module, BatchNorm2d
 
 def make(enc_name, enc_args, clf_name, clf_args):
     """
-  Initializes a random meta model.
+    Initializes a random meta model.
 
-  Args:
-    enc_name (str): name of the encoder (e.g., 'resnet12').
-    enc_args (dict): arguments for the encoder.
-    clf_name (str): name of the classifier (e.g., 'meta-nn').
-    clf_args (dict): arguments for the classifier.
+    Args:
+      enc_name (str): name of the encoder (e.g., 'resnet12').
+      enc_args (dict): arguments for the encoder.
+      clf_name (str): name of the classifier (e.g., 'meta-nn').
+      clf_args (dict): arguments for the classifier.
 
-  Returns:
-    model (MAML): a meta classifier with a random encoder.
-  """
+    Returns:
+      model (MAML): a meta classifier with a random encoder.
+    """
     enc = encoders.make(enc_name, **enc_args)
     clf_args['in_dim'] = enc.get_out_dim()
     clf = classifiers.make(clf_name, **clf_args)
@@ -32,19 +32,19 @@ def make(enc_name, enc_args, clf_name, clf_args):
 
 def load(ckpt, load_clf=False, clf_name=None, clf_args=None):
     """
-  Initializes a meta model with a pre-trained encoder.
+    Initializes a meta model with a pre-trained encoder.
 
-  Args:
-    ckpt (dict): a checkpoint from which a pre-trained encoder is restored.
-    load_clf (bool, optional): if True, loads a pre-trained classifier.
-      Default: False (in which case the classifier is randomly initialized)
-    clf_name (str, optional): name of the classifier (e.g., 'meta-nn')
-    clf_args (dict, optional): arguments for the classifier.
-    (The last two arguments are ignored if load_clf=True.)
+    Args:
+      ckpt (dict): a checkpoint from which a pre-trained encoder is restored.
+      load_clf (bool, optional): if True, loads a pre-trained classifier.
+        Default: False (in which case the classifier is randomly initialized)
+      clf_name (str, optional): name of the classifier (e.g., 'meta-nn')
+      clf_args (dict, optional): arguments for the classifier.
+      (The last two arguments are ignored if load_clf=True.)
 
-  Returns:
-    model (MAML): a meta model with a pre-trained encoder.
-  """
+    Returns:
+      model (MAML): a meta model with a pre-trained encoder.
+    """
     enc = encoders.load(ckpt)
     if load_clf:
         clf = classifiers.load(ckpt)
@@ -157,11 +157,11 @@ class MAML(Module):
 
         def _inner_iter_cp(episode, *state):
             """
-      Performs one inner-loop iteration when checkpointing is enabled. 
-      The code is executed twice:
-        - 1st time with torch.no_grad() for creating checkpoints.
-        - 2nd time with torch.enable_grad() for computing gradients.
-      """
+            Performs one inner-loop iteration when checkpointing is enabled.
+            The code is executed twice:
+              - 1st time with torch.no_grad() for creating checkpoints.
+              - 2nd time with torch.enable_grad() for computing gradients.
+            """
             params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
             mom_buffer = OrderedDict(
                 zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
