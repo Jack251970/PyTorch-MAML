@@ -4,6 +4,7 @@ import argparse
 def parse_launch_parameters():
     parser = argparse.ArgumentParser(description='MAML + Time Series Library')
 
+    # meta learning
     parser.add_argument('--config',
                         help='configuration file')
     parser.add_argument('--name',
@@ -15,6 +16,18 @@ def parse_launch_parameters():
     parser.add_argument('--efficient',
                         help='if True, enables gradient checkpointing',
                         action='store_true')
+    parser.add_argument('--n_shot',
+                        help='number of support samples per class',
+                        type=int, default=5)
+    parser.add_argument('--n_query',
+                        help='number of query samples per class',
+                        type=int, default=15)
+    parser.add_argument('--n_way',
+                        help='number of classes per task/episode',
+                        type=int, default=5)
+    parser.add_argument('--n_episode',
+                        help='number of episodes per epoch',
+                        type=int, default=100)
 
     # basic config
     parser.add_argument('--task_name', type=str, default='long_term_forecast',
