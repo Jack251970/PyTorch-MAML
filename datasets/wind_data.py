@@ -211,7 +211,7 @@ class DatasetWind(Dataset):
             zones = [(p, i) for i, p in enumerate(self.source_paths)]
 
         # Collect windowed sequences per zone
-        zone_windows = {}  # zone_id -> list of window arrays (seq_len, feat_dim)
+        zone_windows = {}  # zone_id -> list of window arrays (seq_len, pre_len, feat_dim)
         for path, zone_id in zones:
             data_x, data_y, _ = read_data(
                 path, self.target, self.seq_len,
@@ -245,7 +245,7 @@ class DatasetWind(Dataset):
 
         for _ in range(n_episode):
             # Sample zones for this task
-            chosen = rng.choice(available_zones, size=n_way, replace=False)
+            chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
             x_shot_list, x_query_list, y_shot_list, y_query_list = [], [], [], []
             for class_idx, zone_id in enumerate(chosen):
                 arr = zone_windows[zone_id]
