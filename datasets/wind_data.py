@@ -161,7 +161,6 @@ class DatasetWind(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        assert data_path in [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
         self.data_x = None
@@ -187,14 +186,9 @@ class DatasetWind(Dataset):
         self.freq = freq
         self.lag = lag
 
-        # target path for testing
-        # source path for training and evaluation
-        self.target_path = os.path.join(root_path, data_path)
-        self.source_paths = []
+        self.paths = []
         for i in range(1, 11):
-            # if data_path == f"wind/Zone{i}/Zone{i}.csv":
-            #     continue
-            self.source_paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
+            self.paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
         self.__read_data__()
 
     def __read_data__(self):
@@ -203,12 +197,7 @@ class DatasetWind(Dataset):
         Each task samples n_way zones, and for each zone selects n_shot support windows
         and n_query query windows.
         """
-        # if self.set_type == 2:
-        #     # test: single domain, produce windows but still form tasks for evaluation
-        #     zones = [(self.target_path, 0)]
-        # else:
-        # training/validation: multiple source domains
-        zones = [(p, i) for i, p in enumerate(self.source_paths)]
+        zones = [(p, i) for i, p in enumerate(self.paths)]
 
         # Collect windowed sequences per zone
         zone_windows = {}  # zone_id -> list of window arrays (seq_len, pre_len, feat_dim)
