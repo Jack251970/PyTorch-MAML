@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+import time
 from collections import OrderedDict
 
 import yaml
@@ -71,6 +72,10 @@ def main(config):
         ckpt_name += '_' + config['dataset'].replace('meta-', '')
         ckpt_name += '_{}_way_{}_shot'.format(
             config['train']['n_way'], config['train']['n_shot'])
+    if args.tag is None:
+        # Use current time as default tag
+        t = time.localtime()
+        args.tag = time.strftime('%Y_%m_%d_%H_%M_%S', t)
     if args.tag is not None:
         ckpt_name += '_' + args.tag
 

@@ -200,24 +200,24 @@ class DatasetWind(Dataset):
         zones = [(p, i) for i, p in enumerate(self.paths)]
 
         # Collect windowed sequences per zone
-        zone_windows = {}  # zone_id -> list of window arrays (seq_len, pre_len, feat_dim)
+        zone_windows = {}  # zone_id -> list of window arrays (seq_len, seq_len + pre_len, feat_dim)
         for path, zone_id in zones:
             data_x, data_y, _ = read_data(
                 path, self.target, self.seq_len,
                 self.set_type, self.features, self.scale,
                 self.scaler, self.lag, self.timeenc,
                 self.freq, self.args
-            )
+            )  # [12280, 5], [12280, 5]
             # Build sliding windows (forecast input only; use last feature as target label for regression if needed)
             windows = []
             max_start = len(data_x) - self.seq_len - self.pred_len + 1
             for start in range(max_start):
-                end = start + self.seq_len
-                win_x = data_x[start:end]  # (seq_len, feat_dim)
+                end = start + self.seq_len + self.pred_len
+                win_x = data_x[start:end]  # (seq_len + pre_len, feat_dim)
                 windows.append(win_x)
             if len(windows) == 0:
                 continue
-            zone_windows[zone_id] = np.stack(windows, axis=0)  # (num_windows, seq_len, feat_dim)
+            zone_windows[zone_id] = np.stack(windows, axis=0)  # (num_windows, seq_len + pre_len, feat_dim)
 
         self.tasks = []
         n_way = self.args.n_way
@@ -238,25 +238,28 @@ class DatasetWind(Dataset):
             x_shot_list, x_query_list, y_shot_list, y_query_list = [], [], [], []
             for class_idx, zone_id in enumerate(chosen):
                 arr = zone_windows[zone_id]
-                perm = rng.permutation(arr.shape[0])
-                support_idx = perm[:n_shot]
-                query_idx = perm[n_shot:n_shot + n_query]
+                perm = rng.permutation(arr.shape[0])  # 随机打乱窗口索引
+                support_idx = perm[:n_shot]  # 选取前n_shot个作为support set
+                query_idx = perm[n_shot:n_shot + n_query]  # 接着n_query个作为query set
 
-                support_windows = arr[support_idx]  # (n_shot, seq_len, feat_dim)
-                query_windows = arr[query_idx]  # (n_query, seq_len, feat_dim)
+                support_windows = arr[support_idx]  # (n_shot, seq_len + pre_len, feat_dim)
+                query_windows = arr[query_idx]  # (n_query, seq_len + pre_len, feat_dim)
 
-                x_shot_list.append(support_windows)
-                x_query_list.append(query_windows)
-                y_shot_list.append(np.full(n_shot, class_idx, dtype=np.int64))
-                y_query_list.append(np.full(n_query, class_idx, dtype=np.int64))
+                x_shot = support_windows[:, :self.seq_len, :]  # (n_shot, seq_len, feat_dim)
+                x_query = query_windows[:, :self.seq_len, :]  # (n_query, seq_len, feat_dim)
+                y_shot = support_windows[:, self.seq_len:, :]  # (n_shot, pre_len, feat_dim)
+                y_query = query_windows[:, self.seq_len:, :]  # (n_query, pre_len, feat_dim)
+
+                x_shot_list.append(x_shot)
+                x_query_list.append(x_query)
+                y_shot_list.append(y_shot)
+                y_query_list.append(y_query)
 
             x_shot = np.stack(x_shot_list, axis=0)  # (n_way, n_shot, seq_len, feat_dim)
             x_query = np.stack(x_query_list, axis=0)  # (n_way, n_query, seq_len, feat_dim)
             y_shot = np.stack(y_shot_list, axis=0)  # (n_way, n_shot)
             y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query)
             self.tasks.append((x_shot, x_query, y_shot, y_query))
-
-        pass
 
     def __len__(self):
         return len(self.tasks)
