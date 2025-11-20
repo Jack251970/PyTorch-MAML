@@ -1,7 +1,7 @@
 import os
-from turtle import pd
 
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, PowerTransformer
 from torch.utils.data import Dataset
 
