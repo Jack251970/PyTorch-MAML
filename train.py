@@ -16,6 +16,7 @@ import datasets
 import models
 import utils
 import utils.optimizers as optimizers
+from utils.arguments import parse_launch_parameters
 
 
 def main(config):
@@ -246,27 +247,7 @@ def main(config):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config',
-                        help='configuration file')
-    parser.add_argument('--name',
-                        help='model name',
-                        type=str, default=None)
-    parser.add_argument('--tag',
-                        help='auxiliary information',
-                        type=str, default=None)
-    parser.add_argument('--gpu',
-                        help='gpu device number',
-                        type=str, default='0')
-    parser.add_argument('--efficient',
-                        help='if True, enables gradient checkpointing',
-                        action='store_true')
-    args = parser.parse_args()
+    args = parse_launch_parameters()
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
-
-    if len(args.gpu.split(',')) > 1:
-        config['_parallel'] = True
-        config['_gpu'] = args.gpu
-
-    utils.set_gpu(args.gpu)
+    utils.set_gpu(str(args.gpu))
     main(config)
