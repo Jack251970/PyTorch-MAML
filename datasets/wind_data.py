@@ -12,6 +12,9 @@ from utils.timefeatures import time_features
 
 # noinspection DuplicatedCode
 class DatasetWind(Dataset):
+    """
+    Wind dataset for meta-learning
+    """
     def __init__(self, args, root_path, flag='train', size=None, features='S', data_path='ETTh1.csv', target='OT',
                  scale=True,
                  scaler='StandardScaler', timeenc=0, freq='h', lag=0, seasonal_patterns=None):
@@ -28,6 +31,7 @@ class DatasetWind(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
+        assert data_path in [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
         self.data_x = None
@@ -53,7 +57,14 @@ class DatasetWind(Dataset):
         self.freq = freq
         self.lag = lag
 
-        self.path = os.path.join(root_path, data_path)
+        # target path for testing
+        # source path for training and evaluation
+        self.target_path = os.path.join(root_path, data_path)
+        self.source_paths = []
+        for i in range(1, 11):
+            # if data_path == f"wind/Zone{i}/Zone{i}.csv":
+            #     continue
+            self.source_paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
         self.__read_data__()
 
     def __read_data__(self):
@@ -157,12 +168,3 @@ class DatasetWind(Dataset):
 
     def __len__(self):
         return len(self.data_x) - self.seq_len - self.pred_len + 1
-
-    def inverse_transform(self, data):
-        return self.scaler.inverse_transform(data)
-
-    def get_scaler(self):
-        return self.scaler
-
-    def get_all_data(self):
-        return self.data_x, self.data_y, self.data_stamp
