@@ -27,7 +27,7 @@ def parse_launch_parameters():
                         type=int, default=5)
     parser.add_argument('--n_episode',
                         help='number of episodes per epoch',
-                        type=int, default=100)
+                        type=int, default=10000)
 
     # basic config
     parser.add_argument('--task_name', type=str, default='long_term_forecast',
