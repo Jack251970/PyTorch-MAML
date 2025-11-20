@@ -267,6 +267,8 @@ class DatasetWind(Dataset):
             y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query)
             self.tasks.append((x_shot, x_query, y_shot, y_query))
 
+        pass
+
     def __len__(self):
         return len(self.tasks)
 

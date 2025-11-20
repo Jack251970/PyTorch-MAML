@@ -297,4 +297,4 @@ if __name__ == '__main__':
     args = parse_launch_parameters()
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
     utils.set_gpu(str(args.gpu))
-    main(config, args)
+    main(config)
