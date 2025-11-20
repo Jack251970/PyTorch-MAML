@@ -193,6 +193,7 @@ class DatasetWind(Dataset):
         n_query = self.args.n_query
         n_episode = self.args.n_episode
 
+        # 随机采样n个zone，组成n_way个预测任务
         available_zones = [z for z, arr in zone_windows.items() if arr.shape[0] >= (n_shot + n_query)]
         if len(available_zones) < n_way:
             raise ValueError("Not enough zones with sufficient windows for meta-learning task construction.")
