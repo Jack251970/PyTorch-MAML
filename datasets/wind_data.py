@@ -203,12 +203,12 @@ class DatasetWind(Dataset):
         Each task samples n_way zones, and for each zone selects n_shot support windows
         and n_query query windows.
         """
-        if self.set_type == 2:
-            # test: single domain, produce windows but still form tasks for evaluation
-            zones = [(self.target_path, 0)]
-        else:
-            # training/validation: multiple source domains
-            zones = [(p, i) for i, p in enumerate(self.source_paths)]
+        # if self.set_type == 2:
+        #     # test: single domain, produce windows but still form tasks for evaluation
+        #     zones = [(self.target_path, 0)]
+        # else:
+        # training/validation: multiple source domains
+        zones = [(p, i) for i, p in enumerate(self.source_paths)]
 
         # Collect windowed sequences per zone
         zone_windows = {}  # zone_id -> list of window arrays (seq_len, pre_len, feat_dim)
