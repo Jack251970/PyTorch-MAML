@@ -18,6 +18,44 @@ import utils
 import utils.optimizers as optimizers
 from utils.arguments import parse_launch_parameters
 
+from datasets.wind_data import DatasetWind
+
+
+def get_data(data_flag):
+    # get data information
+    timeenc = 0 if args.embed != 'timeF' else 1
+    pin_memory = args.pin_memory
+
+    shuffle_flag = False if data_flag == 'test' else True
+    drop_last = True
+    batch_size = args.batch_size
+
+    data_set = DatasetWind(
+        args=args,
+        root_path=args.root_path,
+        data_path=args.data_path,
+        flag=data_flag,
+        size=[args.seq_len, args.label_len, args.pred_len],
+        features=args.features,
+        target=args.target,
+        scale=True,
+        scaler=args.scaler,
+        timeenc=timeenc,
+        freq=args.freq,
+        lag=args.lag,
+        seasonal_patterns=args.seasonal_patterns
+    )
+    data_loader = DataLoader(
+        data_set,
+        batch_size=batch_size,
+        shuffle=shuffle_flag,
+        num_workers=args.num_workers,
+        drop_last=drop_last,
+        pin_memory=pin_memory,
+        persistent_workers=True
+    )
+    return data_set, data_loader
+
 
 def main(config):
     random.seed(0)
@@ -45,23 +83,32 @@ def main(config):
     ##### Dataset #####
 
     # meta-train
-    train_set = datasets.make(config['dataset'], **config['train'])
+    # train_set = datasets.make(config['dataset'], **config['train'])
+    # utils.log('meta-train set: {} (x{}), {}'.format(
+    #     train_set[0][0].shape, len(train_set), train_set.n_classes))
+    # train_loader = DataLoader(
+    #     train_set, config['train']['n_episode'],
+    #     collate_fn=datasets.collate_fn, num_workers=1, pin_memory=True)
+    train_set, train_loader = get_data('train')
     utils.log('meta-train set: {} (x{}), {}'.format(
         train_set[0][0].shape, len(train_set), train_set.n_classes))
-    train_loader = DataLoader(
-        train_set, config['train']['n_episode'],
-        collate_fn=datasets.collate_fn, num_workers=1, pin_memory=True)
 
     # meta-val
+    # eval_val = False
+    # if config.get('val'):
+    #     eval_val = True
+    #     val_set = datasets.make(config['dataset'], **config['val'])
+    #     utils.log('meta-val set: {} (x{}), {}'.format(
+    #         val_set[0][0].shape, len(val_set), val_set.n_classes))
+    #     val_loader = DataLoader(
+    #         val_set, config['val']['n_episode'],
+    #         collate_fn=datasets.collate_fn, num_workers=1, pin_memory=True)
     eval_val = False
     if config.get('val'):
         eval_val = True
-        val_set = datasets.make(config['dataset'], **config['val'])
+        val_set, val_loader = get_data('val')
         utils.log('meta-val set: {} (x{}), {}'.format(
             val_set[0][0].shape, len(val_set), val_set.n_classes))
-        val_loader = DataLoader(
-            val_set, config['val']['n_episode'],
-            collate_fn=datasets.collate_fn, num_workers=1, pin_memory=True)
 
     ##### Model and Optimizer #####
 
@@ -250,4 +297,4 @@ if __name__ == '__main__':
     args = parse_launch_parameters()
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
     utils.set_gpu(str(args.gpu))
-    main(config)
+    main(config, args)

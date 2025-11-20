@@ -11,7 +11,7 @@ from utils.timefeatures import time_features
 
 
 # noinspection DuplicatedCode
-class Dataset_Custom(Dataset):
+class DatasetWind(Dataset):
     def __init__(self, args, root_path, flag='train', size=None, features='S', data_path='ETTh1.csv', target='OT',
                  scale=True,
                  scaler='StandardScaler', timeenc=0, freq='h', lag=0, seasonal_patterns=None):
