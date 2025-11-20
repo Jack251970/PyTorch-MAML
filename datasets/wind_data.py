@@ -10,6 +10,49 @@ from utils.augmentation import run_augmentation_single
 from utils.timefeatures import time_features
 
 
+def get_search_space():
+    default_config = {
+        'task_name': {'_type': 'single', '_value': 'long_term_forecast'},
+        'is_training': {'_type': 'single', '_value': 1},
+        'des': {'_type': 'single', '_value': 'Exp'},
+        'use_gpu': {'_type': 'single', '_value': True},
+        'embed': {'_type': 'single', '_value': 'timeF'},
+        'freq': {'_type': 'single', '_value': 't'},
+        'batch_size': {'_type': 'single', '_value': 256},
+        'pin_memory': {'_type': 'single', '_value': False},
+    }
+
+    dataset_config = {
+        'data': {'_type': 'single', '_value': 'custom'},
+        'features': {'_type': 'single', '_value': 'MS'},
+        'root_path': {'_type': 'single', '_value': './dataset/'},
+        'data_path': {'_type': 'single', '_value': 'wind/Zone1/Zone1.csv'},
+        'target': {'_type': 'single', '_value': 'wind'},
+        'enc_in': {'_type': 'single', '_value': 5},
+        'dec_in': {'_type': 'single', '_value': 5},
+        'c_out': {'_type': 'single', '_value': 5},
+    }
+
+    learning_config = {
+        'learning_rate': {'_type': 'single', '_value': 0.0001},
+        'train_epochs': {'_type': 'single', '_value': 1},
+    }
+
+    period_config = {
+        'seq_len': {'_type': 'single', '_value': 96},
+        'label_len': {'_type': 'single', '_value': 96},
+        'pred_len': {'_type': 'single', '_value': 16},
+        'moving_avg': {'_type': 'single', '_value': 25},
+    }
+
+    dlinear_config = {
+        'd_model': {'_type': 'single', '_value': 128},
+        # 'individual': {'_type': 'single', '_value': True},
+    }
+
+    return [default_config, dataset_config, learning_config, period_config, dlinear_config]
+
+
 def read_data(path, target, seq_len, set_type, features, scale, scaler, lag, timeenc, freq, args):
     # read raw data
     df_raw = pd.read_csv(path)
