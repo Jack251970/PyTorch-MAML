@@ -119,7 +119,7 @@ def main(config):
 
     inner_args = utils.config_inner_args(config.get('inner_args'))
     if config.get('load'):
-        ckpt = torch.load(config['load'])
+        ckpt = torch.load(config['load'])  # load parameters from a checkpoint
         config['encoder'] = ckpt['encoder']
         config['encoder_args'] = ckpt['encoder_args']
         config['classifier'] = ckpt['classifier']
@@ -279,9 +279,9 @@ def main(config):
             'encoder_args': config['encoder_args'],
             'encoder_state_dict': model_.encoder.state_dict(),
 
-            'classifier': config['classifier'],
-            'classifier_args': config['classifier_args'],
-            'classifier_state_dict': model_.classifier.state_dict(),
+            # 'classifier': config['classifier'],
+            # 'classifier_args': config['classifier_args'],
+            # 'classifier_state_dict': model_.classifier.state_dict(),
 
             'training': training,
         }
