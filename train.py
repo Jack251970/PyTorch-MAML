@@ -155,12 +155,6 @@ def main(config):
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
             x_query, y_query = x_query.cuda(), y_query.cuda()
 
-            if inner_args['reset_classifier']:
-                if config.get('_parallel'):
-                    model.module.reset_classifier()
-                else:
-                    model.reset_classifier()
-
             logits = model(x_shot, x_query, y_shot, inner_args, meta_train=True)
             logits = logits.flatten(0, 1)
             labels = y_query.flatten()
@@ -188,12 +182,6 @@ def main(config):
                 x_shot, x_query, y_shot, y_query = data
                 x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
                 x_query, y_query = x_query.cuda(), y_query.cuda()
-
-                if inner_args['reset_classifier']:
-                    if config.get('_parallel'):
-                        model.module.reset_classifier()
-                    else:
-                        model.reset_classifier()
 
                 logits = model(x_shot, x_query, y_shot, inner_args, meta_train=False)
                 logits = logits.flatten(0, 1)
@@ -247,20 +235,6 @@ def main(config):
             'lr_scheduler_state_dict': lr_scheduler.state_dict()
             if lr_scheduler is not None else None,
         }
-        # ckpt = {
-        #     'file': __file__,
-        #     'config': config,
-        #
-        #     'encoder': config['encoder'],
-        #     'encoder_args': config['encoder_args'],
-        #     'encoder_state_dict': model_.encoder.state_dict(),
-        #
-        #     'classifier': config['classifier'],
-        #     'classifier_args': config['classifier_args'],
-        #     'classifier_state_dict': model_.classifier.state_dict(),
-        #
-        #     'training': training,
-        # }
 
         # 'epoch-last.pth': saved at the latest epoch
         # 'max-va.pth': saved when validation accuracy is at its maximum
