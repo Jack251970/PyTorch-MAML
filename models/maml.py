@@ -1,9 +1,9 @@
 from collections import OrderedDict
 
 import torch
-import torch.nn.functional as F
 import torch.autograd as autograd
 import torch.utils.checkpoint as cp
+from torch import nn
 
 from .encoders.dlinear import DLinearModel
 from .modules import get_child_dict, Module, BatchNorm2d
@@ -43,8 +43,8 @@ class MAML(Module):
         backward passes and the parameter update.
 
         Args:
-          x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
-          y (int tensor, [n_way * n_shot]): per-episode support set labels.
+          x (float tensor, [n_way * n_shot, H, D]): per-episode support set.
+          y (int tensor, [n_way * n_shot, P, D]): per-episode support set labels.
           params (dict): the model parameters BEFORE the update.
           mom_buffer (dict): the momentum buffer BEFORE the update.
           episode (int): the current episode index.
@@ -55,10 +55,11 @@ class MAML(Module):
           updated_params (dict): the model parameters AFTER the update.
           mom_buffer (dict): the momentum buffer AFTER the update.
         """
+        loss_fn = nn.MSELoss()
         with torch.enable_grad():
             # forward pass
             logits = self._inner_forward(x, params, episode)
-            loss = F.cross_entropy(logits, y)
+            loss = loss_fn(logits, y)
             # backward pass
             # 不调用backward，而是直接计算loss关于params的梯度
             # 这样的话，模型的参数暂时不会更新，所有任务都会从同一个初始参数开始进行内环更新
@@ -103,7 +104,7 @@ class MAML(Module):
         Returns:
           params (dict): model paramters AFTER inner-loop adaptation.
         """
-        assert x.dim() == 4 and y.dim() == 1
+        assert x.dim() == 4 and y.dim() == 3
         assert x.size(0) == y.size(0)
 
         # Initializes a dictionary of momentum buffer for gradient descent in the
