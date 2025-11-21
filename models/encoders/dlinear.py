@@ -38,7 +38,7 @@ class series_decomp(nn.Module):
         return res, moving_mean
 
 
-class Model(nn.Module):
+class DLinearModel(nn.Module):
     """
     Paper link: https://arxiv.org/pdf/2205.13504.pdf
     """
@@ -47,7 +47,7 @@ class Model(nn.Module):
         """
         individual: Bool, whether shared model among different variates.
         """
-        super(Model, self).__init__()
+        super(DLinearModel, self).__init__()
         self.task_name = configs.task_name
         self.seq_len = configs.seq_len
         if self.task_name == 'classification' or self.task_name == 'anomaly_detection' or self.task_name == 'imputation':

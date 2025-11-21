@@ -5,73 +5,37 @@ import torch.nn.functional as F
 import torch.autograd as autograd
 import torch.utils.checkpoint as cp
 
-from . import encoders
-from . import classifiers
+from .encoders.dlinear import DLinearModel
 from .modules import get_child_dict, Module, BatchNorm2d
 
 
-def make(enc_name, enc_args, clf_name, clf_args):
+def make(args):
     """
     Initializes a random meta model.
-
-    Args:
-      enc_name (str): name of the encoder (e.g., 'resnet12').
-      enc_args (dict): arguments for the encoder.
-      clf_name (str): name of the classifier (e.g., 'meta-nn').
-      clf_args (dict): arguments for the classifier.
-
-    Returns:
-      model (MAML): a meta classifier with a random encoder.
     """
-    enc = encoders.make(enc_name, **enc_args)
-    clf_args['in_dim'] = enc.get_out_dim()
-    clf = classifiers.make(clf_name, **clf_args)
-    model = MAML(enc, clf)
+    model = MAML(args)
     return model
 
 
-def load(ckpt, load_clf=False, clf_name=None, clf_args=None):
+def load(ckpt, args):
     """
     Initializes a meta model with a pre-trained encoder.
-
-    Args:
-      ckpt (dict): a checkpoint from which a pre-trained encoder is restored.
-      load_clf (bool, optional): if True, loads a pre-trained classifier.
-        Default: False (in which case the classifier is randomly initialized)
-      clf_name (str, optional): name of the classifier (e.g., 'meta-nn')
-      clf_args (dict, optional): arguments for the classifier.
-      (The last two arguments are ignored if load_clf=True.)
-
-    Returns:
-      model (MAML): a meta model with a pre-trained encoder.
     """
-    enc = encoders.load(ckpt)
-    if load_clf:
-        clf = classifiers.load(ckpt)
-    else:
-        if clf_name is None and clf_args is None:
-            clf = classifiers.make(ckpt['classifier'], **ckpt['classifier_args'])
-        else:
-            clf_args['in_dim'] = enc.get_out_dim()
-            clf = classifiers.make(clf_name, **clf_args)
-    model = MAML(enc, clf)
+    model = MAML(args, ckpt)
     return model
 
 
 class MAML(Module):
-    def __init__(self, encoder, classifier):
+    def __init__(self, args, ckpt = None):
         super(MAML, self).__init__()
-        self.encoder = encoder
-        self.classifier = classifier
-
-    def reset_classifier(self):
-        self.classifier.reset_parameters()
+        self.encoder = DLinearModel(args)
+        if ckpt is not None:
+            self.encoder.load_state_dict(ckpt)
 
     def _inner_forward(self, x, params, episode):
         """ Forward pass for the inner loop. """
         feat = self.encoder(x, get_child_dict(params, 'encoder'), episode)
-        logits = self.classifier(feat, get_child_dict(params, 'classifier'))
-        return logits
+        return feat
 
     def _inner_iter(self, x, y, params, mom_buffer, episode, inner_args, detach):
         """
@@ -114,8 +78,6 @@ class MAML(Module):
                         mom_buffer[name] = grad
                     if 'encoder' in name:
                         lr = inner_args['encoder_lr']
-                    elif 'classifier' in name:
-                        lr = inner_args['classifier_lr']
                     else:
                         raise ValueError('invalid parameter name')
                     updated_param = param - lr * grad
@@ -192,19 +154,18 @@ class MAML(Module):
     def forward(self, x_shot, x_query, y_shot, inner_args, meta_train):
         """
         Args:
-          x_shot (float tensor, [n_episode, n_way * n_shot, C, H, W]): support sets.
-          x_query (float tensor, [n_episode, n_way * n_query, C, H, W]): query sets.
+          x_shot (float tensor, [n_episode, n_way * n_shot, H, D]): support sets.
+          x_query (float tensor, [n_episode, n_way * n_query, P, D]): query sets.
             (T: transforms, C: channels, H: height, W: width)
-          y_shot (int tensor, [n_episode, n_way * n_shot]): support set labels.
+          y_shot (int tensor, [n_episode, n_way * n_shot, H, D]): support set labels.
           inner_args (dict, optional): inner-loop hyperparameters.
           meta_train (bool): if True, the model is in meta-training.
 
         Returns:
-          logits (float tensor, [n_episode, n_way * n_shot, n_way]): predicted logits.
+          y_query (float tensor, [n_episode, n_way * n_shot, P, D]): predicted logits.
         """
         assert self.encoder is not None
-        assert self.classifier is not None
-        assert x_shot.dim() == 5 and x_query.dim() == 5
+        assert x_shot.dim() == 4 and x_query.dim() == 4
         assert x_shot.size(0) == x_query.size(0)
 
         # a dictionary of parameters that will be updated in the inner loop
@@ -214,7 +175,7 @@ class MAML(Module):
                     any(s in name for s in inner_args['frozen'] + ['temp']):
                 params.pop(name)
 
-        logits = []
+        y_query = []
 
         # 对于每一个task，进行内环更新并计算查询集上的表现
         # 对于每一个任务，它们初始化的参数都是相同的（即meta-learnt的初始参数，对应于params）
@@ -232,8 +193,8 @@ class MAML(Module):
             with torch.set_grad_enabled(meta_train):
                 self.eval()
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
-            logits.append(logits_ep)
+            y_query.append(logits_ep)
 
         self.train(meta_train)
-        logits = torch.stack(logits)
-        return logits
+        y_query = torch.stack(y_query)
+        return y_query

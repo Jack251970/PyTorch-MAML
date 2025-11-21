@@ -119,22 +119,13 @@ def main(config):
 
     inner_args = utils.config_inner_args(config.get('inner_args'))
     if config.get('load'):
-        ckpt = torch.load(config['load'])  # load parameters from a checkpoint
-        config['encoder'] = ckpt['encoder']
-        config['encoder_args'] = ckpt['encoder_args']
-        config['classifier'] = ckpt['classifier']
-        config['classifier_args'] = ckpt['classifier_args']
-        model = models.load(ckpt, load_clf=(not inner_args['reset_classifier']))
+        ckpt = torch.load(config['load'], map_location=torch.device('cpu'))  # load parameters from a checkpoint
+        model = models.load(ckpt, args)
         optimizer, lr_scheduler = optimizers.load(ckpt, model.parameters())
         start_epoch = ckpt['training']['epoch'] + 1
         max_va = ckpt['training']['max_va']
     else:
-        config['encoder_args'] = config.get('encoder_args') or dict()
-        config['classifier_args'] = config.get('classifier_args') or dict()
-        config['encoder_args']['bn_args']['n_episode'] = config['train']['n_episode']
-        config['classifier_args']['n_way'] = config['train']['n_way']
-        model = models.make(config['encoder'], config['encoder_args'],
-                            config['classifier'], config['classifier_args'])
+        model = models.make(args)
         optimizer, lr_scheduler = optimizers.make(
             config['optimizer'], model.parameters(), **config['optimizer_args'])
         start_epoch = 1
@@ -271,23 +262,24 @@ def main(config):
             'lr_scheduler_state_dict': lr_scheduler.state_dict()
             if lr_scheduler is not None else None,
         }
-        ckpt = {
-            'file': __file__,
-            'config': config,
-
-            'encoder': config['encoder'],
-            'encoder_args': config['encoder_args'],
-            'encoder_state_dict': model_.encoder.state_dict(),
-
-            # 'classifier': config['classifier'],
-            # 'classifier_args': config['classifier_args'],
-            # 'classifier_state_dict': model_.classifier.state_dict(),
-
-            'training': training,
-        }
+        # ckpt = {
+        #     'file': __file__,
+        #     'config': config,
+        #
+        #     'encoder': config['encoder'],
+        #     'encoder_args': config['encoder_args'],
+        #     'encoder_state_dict': model_.encoder.state_dict(),
+        #
+        #     'classifier': config['classifier'],
+        #     'classifier_args': config['classifier_args'],
+        #     'classifier_state_dict': model_.classifier.state_dict(),
+        #
+        #     'training': training,
+        # }
 
         # 'epoch-last.pth': saved at the latest epoch
         # 'max-va.pth': saved when validation accuracy is at its maximum
+        model._save_to_state_dict()
         torch.save(ckpt, os.path.join(ckpt_path, 'epoch-last.pth'))
         torch.save(trlog, os.path.join(ckpt_path, 'trlog.pth'))
 
