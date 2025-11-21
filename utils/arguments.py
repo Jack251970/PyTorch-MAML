@@ -53,8 +53,8 @@ def parse_launch_parameters():
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:uni-variate '
                              'predict uni-variate, MS:multivariate predict uni-variate')
     parser.add_argument('--target', type=str, default='wind', help='target feature in S or MS task')
-    parser.add_argument('--freq', type=str, default='t',
-                        help='freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, '
+    parser.add_argument('--freq', type=str, default='min',
+                        help='freq for time features encoding, options:[s:secondly, min:minutely, h:hourly, d:daily, '
                              'b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min '
                              'or 3h')
     parser.add_argument('--lag', type=int, default=0, help='lag of time series, only for RNN & LSTM related model')
