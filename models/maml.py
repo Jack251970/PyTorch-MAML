@@ -93,9 +93,9 @@ class MAML(Module):
         Performs inner-loop adaptation in MAML.
 
         Args:
-          x (float tensor, [n_way * n_shot, C, H, W]): per-episode support set.
+          x (float tensor, [n_way * n_shot, H, D]): per-episode support set.
             (T: transforms, C: channels, H: height, W: width)
-          y (int tensor, [n_way * n_shot]): per-episode support set labels.
+          y (int tensor, [n_way * n_shot, P, D]): per-episode support set labels.
           params (dict): a dictionary of parameters at meta-initialization.
           episode (int): the current episode index.
           inner_args (dict): inner-loop optimization hyperparameters.
@@ -104,7 +104,7 @@ class MAML(Module):
         Returns:
           params (dict): model paramters AFTER inner-loop adaptation.
         """
-        assert x.dim() == 4 and y.dim() == 3
+        assert x.dim() == 3 and y.dim() == 3
         assert x.size(0) == y.size(0)
 
         # Initializes a dictionary of momentum buffer for gradient descent in the
