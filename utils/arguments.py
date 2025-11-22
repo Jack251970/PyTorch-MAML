@@ -27,21 +27,7 @@ def parse_launch_parameters():
                         type=int, default=5)
     parser.add_argument('--n_episode',
                         help='number of episodes per epoch',
-                        type=int, default=10000)
-
-    # basic config
-    parser.add_argument('--task_name', type=str, default='long_term_forecast',
-                        help="task name, options:['long_term_forecast', 'short_term_forecast', 'imputation', "
-                             "'classification', 'anomaly_detection', 'probability_forecast']")
-    parser.add_argument('--is_training', type=int, default=1,
-                        help='1: train and test, 0: only test')
-    parser.add_argument('--model_id', type=str, default='unknown',
-                        help='model id for interface')
-    parser.add_argument('--model', type=str, default='Autoformer',
-                        help="model name, options: ['TimesNet', 'Autoformer', 'Transformer', "
-                             "'Nonstationary_Transformer', 'DLinear', 'FEDformer', 'Informer', 'LightTS', 'Reformer', "
-                             "'ETSformer', 'PatchTST', 'Pyraformer', 'MICN', 'Crossformer', 'FiLM', 'iTransformer', "
-                             "'Koopa', 'QSQF-C', 'RNN-SF', 'LSTM-CQ', 'LSTM-AQ']")
+                        type=int, default=4)
 
     # data loader
     parser.add_argument('--data', type=str, default='custom',
