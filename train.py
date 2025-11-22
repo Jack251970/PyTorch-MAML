@@ -1,18 +1,18 @@
+import math
 import os
 import random
 import time
 
-import yaml
 import torch
 import torch.nn as nn
 import numpy as np
+from torch import optim
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
 import models
 import utils
-import utils.optimizers as optimizers
 from utils.arguments import parse_launch_parameters
 
 from datasets.wind_data import DatasetWind
@@ -54,20 +54,14 @@ def get_data(data_flag):
     return data_set, data_loader
 
 
-def main(config, device):
+def main(device):
     random.seed(0)
     np.random.seed(0)
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
 
-    ckpt_name = args.name
-    if ckpt_name is None:
-        ckpt_name = config['encoder']
-        ckpt_name += '_' + config['dataset'].replace('meta-', '')
-        ckpt_name += '_{}_way_{}_shot'.format(
-            config['train']['n_way'], config['train']['n_shot'])
+    ckpt_name = 'meta_wind'
+    ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)
     if args.tag is None:
         # Use current time as default tag
         t = time.localtime()
@@ -79,45 +73,41 @@ def main(config, device):
     utils.ensure_path(ckpt_path)
     utils.set_log_path(ckpt_path)
     writer = SummaryWriter(os.path.join(ckpt_path, 'tensorboard'))
-    yaml.dump(config, open(os.path.join(ckpt_path, 'config.yaml'), 'w'))
 
     ##### Dataset #####
 
     # meta-train
     train_set, train_loader = get_data('train')
-    utils.log('meta-train set: {} (x{})'.format(
-        train_set[0][0].shape, len(train_set)))
+    utils.log('meta-train set: {} (x{})'.format(train_set[0][0].shape, len(train_set)))
 
     # meta-val
-    eval_val = False
-    if config.get('val'):
-        eval_val = True
-        val_set, val_loader = get_data('val')
-        utils.log('meta-val set: {} (x{})'.format(
-            val_set[0][0].shape, len(val_set)))
+    eval_val = True
+    val_set, val_loader = get_data('val')
+    utils.log('meta-val set: {} (x{})'.format(val_set[0][0].shape, len(val_set)))
 
     ##### Model and Optimizer #####
 
-    inner_args = utils.config_inner_args(config.get('inner_args'))
-    if config.get('load'):
-        # ckpt = torch.load(config['load'], map_location=torch.device('cpu'))  # load parameters from a checkpoint
-        ckpt = torch.load(config['load'])
+    if args.load is not None:
+        if not os.path.exists(args.load):
+            raise ValueError('checkpoint {} does not exist.'.format(args.load))
+        # load parameters from a checkpoint
+        if args.use_gpu:
+            ckpt = torch.load(args.load)
+        else:
+            ckpt = torch.load(args.load, map_location=torch.device('cpu'))
         model = models.load(ckpt, args).to(device)
-        optimizer, lr_scheduler = optimizers.load(ckpt, model.parameters())
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+        optimizer.load_state_dict(ckpt['training']['optimizer_state_dict'])
         start_epoch = ckpt['training']['epoch'] + 1
         min_vl = ckpt['training']['min_vl']
     else:
         model = models.make(args).to(device)
-        optimizer, lr_scheduler = optimizers.make(
-            config['optimizer'], model.parameters(), **config['optimizer_args'])
+        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         start_epoch = 1
         min_vl = float('inf')
 
     if args.efficient:
         model.go_efficient()
-
-    if config.get('_parallel'):
-        model = nn.DataParallel(model)
 
     utils.log('num params: {}'.format(utils.compute_n_params(model)))
     timer_elapsed, timer_epoch = utils.Timer(), utils.Timer()
@@ -135,7 +125,7 @@ def main(config, device):
 
     # 使用多个epoch不断训练寻找最佳的初始参数，使得模型在少量梯度更新后能有较好的表现
     # 一个train_loader中所提供的多个Batch of tasks不一定能确保最终的收敛，因此在工程中应当用多个epoch来训练模型
-    for epoch in range(start_epoch, config['epoch'] + 1):
+    for epoch in range(start_epoch, args.train_epochs + 1):
         timer_epoch.start()
         aves = {k: utils.AverageMeter() for k in aves_keys}
 
@@ -153,7 +143,7 @@ def main(config, device):
             x_query, y_query = x_query.to(device), y_query.to(device)
 
             # prediction labels
-            logits = model(x_shot, x_query, y_shot, inner_args, meta_train=True)  # [n_episode, n_way * n_shot, H, D]
+            logits = model(x_shot, x_query, y_shot, meta_train=True)  # [n_episode, n_way * n_shot, H, D]
 
             f_dim = -1 if args.features == 'MS' else 0
             preds = logits[..., f_dim]
@@ -180,7 +170,7 @@ def main(config, device):
                 x_shot, y_shot = x_shot.to(device), y_shot.to(device)
                 x_query, y_query = x_query.to(device), y_query.to(device)
 
-                logits = model(x_shot, x_query, y_shot, inner_args, meta_train=False)
+                logits = model(x_shot, x_query, y_shot, meta_train=False)
 
                 f_dim = -1 if args.features == 'MS' else 0
                 preds = logits[..., f_dim]
@@ -189,8 +179,7 @@ def main(config, device):
                 loss = loss_fn(preds, labels)
                 aves['vl'].update(loss.item(), 1)
 
-        if lr_scheduler is not None:
-            lr_scheduler.step()
+        adjust_learning_rate(optimizer, epoch, args)
 
         for k, avg in aves.items():
             aves[k] = avg.item()
@@ -199,7 +188,7 @@ def main(config, device):
         t_epoch = utils.time_str(timer_epoch.end())
         t_elapsed = utils.time_str(timer_elapsed.end())
         t_estimate = utils.time_str(timer_elapsed.end() /
-                                    (epoch - start_epoch + 1) * (config['epoch'] - start_epoch + 1))
+                                    (epoch - start_epoch + 1) * (args.train_epochs - start_epoch + 1))
 
         # formats output
         log_str = 'epoch {}, meta-train {:.4f}'.format(
@@ -214,25 +203,14 @@ def main(config, device):
         utils.log(log_str)
 
         # saves model and meta-data
-        if config.get('_parallel'):
-            model_ = model.module
-        else:
-            model_ = model
-
         training = {
             'epoch': epoch,
             'min_vl': min(min_vl, aves['vl']),
-
-            'optimizer': config['optimizer'],
-            'optimizer_args': config['optimizer_args'],
-            'optimizer_state_dict': optimizer.state_dict(),
-            'lr_scheduler_state_dict': lr_scheduler.state_dict()
-            if lr_scheduler is not None else None,
+            'optimizer_state_dict': optimizer.state_dict()
         }
         ckpt = {
             'file': __file__,
-            'config': config,
-            'encoder_state_dict': model_.encoder.state_dict(),
+            'encoder_state_dict': model.encoder.state_dict(),
             'training': training,
         }
 
@@ -248,9 +226,47 @@ def main(config, device):
         writer.flush()
 
 
+def acquire_device(args):
+    if args.use_gpu:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(
+            args.gpu) if not args.use_multi_gpu else args.devices
+        device = torch.device('cuda:{}'.format(args.gpu))
+        if torch.backends.cudnn.is_available():
+            torch.backends.cudnn.benchmark = True
+        print('Use GPU: cuda:{}'.format(args.gpu))
+    else:
+        device = torch.device('cpu')
+        print('Use CPU')
+    return device
+
+
+def adjust_learning_rate(optimizer, epoch, args):
+    # lr = args.learning_rate * (0.2 ** (epoch // 2))
+    if args.lradj == 'type1':
+        lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
+    elif args.lradj == 'type2':
+        lr_adjust = {
+            2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
+            10: 5e-7, 15: 1e-7, 20: 5e-8
+        }
+    elif args.lradj == "cosine":
+        lr_adjust = {epoch: args.learning_rate / 2 * (1 + math.cos(epoch / args.train_epochs * math.pi))}
+    else:
+        raise NotImplementedError
+
+    if epoch in lr_adjust.keys():
+        # get lr in dictionary
+        lr = lr_adjust[epoch]
+
+        # update lr in optimizer
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+        return 'Updating learning rate to {}'.format(lr)
+    else:
+        return None
+
+
 if __name__ == '__main__':
     args = parse_launch_parameters()
-    config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
-    utils.set_gpu(str(args.gpu))
-    device = torch.device('cuda:{}'.format(str(args.gpu)))
-    main(config, device)
+    device = acquire_device(args)
+    main(device)

@@ -38,7 +38,7 @@ class MAML(Module):
         feat = self.encoder(x, get_child_dict(params, 'encoder'), episode)
         return feat
 
-    def _inner_iter(self, x, y, params, mom_buffer, episode, inner_args, detach):
+    def _inner_iter(self, x, y, params, mom_buffer, episode, detach):
         """
         Performs one inner-loop iteration of MAML including the forward and
         backward passes and the parameter update.
@@ -49,7 +49,6 @@ class MAML(Module):
           params (dict): the model parameters BEFORE the update.
           mom_buffer (dict): the momentum buffer BEFORE the update.
           episode (int): the current episode index.
-          inner_args (dict): inner-loop optimization hyperparameters.
           detach (bool): if True, detachs the graph for the current iteration.
 
         Returns:

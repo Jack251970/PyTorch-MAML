@@ -28,6 +28,9 @@ def parse_launch_parameters():
     parser.add_argument('--n_episode',
                         help='number of episodes per epoch',
                         type=int, default=4)
+    parser.add_argument('--load',
+                        help='path to loaded model',
+                        type=str, default=None)
 
     # data loader
     parser.add_argument('--data', type=str, default='custom',
@@ -103,7 +106,7 @@ def parse_launch_parameters():
     # optimization
     parser.add_argument('--num_workers', type=int, default=12, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='deprecated')
-    parser.add_argument('--train_epochs', type=int, default=10, help='train epochs')
+    parser.add_argument('--train_epochs', type=int, default=150, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size of train input data')
     parser.add_argument('--patience', type=int, default=3, help='early stopping patience')
     parser.add_argument('--learning_rate', type=float, default=0.0001, help='optimizer learning rate')
