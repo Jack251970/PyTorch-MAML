@@ -29,7 +29,7 @@ def get_data(data_flag):
 
     shuffle_flag = False if data_flag == 'test' else True
     drop_last = True
-    batch_size = args.batch_size
+    batch_size = args.n_episode  # In meta learning, each batch contains multiple tasks
 
     data_set = DatasetWind(
         args=args,
