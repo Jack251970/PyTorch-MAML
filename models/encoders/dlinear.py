@@ -14,7 +14,6 @@ class DLinearModel(Module):
         individual: Bool, whether shared model among different variates.
         """
         super(DLinearModel, self).__init__()
-        self.task_name = configs.task_name
         self.seq_len = configs.seq_len
         self.pred_len = configs.pred_len
         # self.individual = individual
