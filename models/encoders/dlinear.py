@@ -68,7 +68,7 @@ class DLinearModel(Module):
 
     def forecast(self, x_enc, params=None, episode=None):
         # Encoder
-                return self.encoder(x_enc, params, episode)
+        return self.encoder(x_enc, params, episode)
 
     def forward(self, x_enc, params=None, episode=None):
         dec_out = self.forecast(x_enc, params, episode)
