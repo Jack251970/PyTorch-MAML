@@ -180,7 +180,6 @@ class DatasetWind(Dataset):
         n_way = self.args.n_way
         n_shot = self.args.n_shot
         n_query = self.args.n_query
-        n_episode = self.args.n_episode
 
         # 随机采样n个zone，组成n_way个预测任务
         available_zones = [z for z, arr in zone_windows.items() if arr.shape[0] >= (n_shot + n_query)]
@@ -189,9 +188,12 @@ class DatasetWind(Dataset):
 
         rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
 
-        for _ in range(n_episode):
-            # Sample zones for this task
+        random_times = 100000
+        for _ in range(random_times):
+            # 选取n_way个zone构建一个任务
             chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
+
+            # 对于每个zone，随机选取n_shot+n_query个窗口
             x_shot_list, x_query_list, y_shot_list, y_query_list = [], [], [], []
             for class_idx, zone_id in enumerate(chosen):
                 arr = zone_windows[zone_id]
@@ -212,10 +214,16 @@ class DatasetWind(Dataset):
                 y_shot_list.append(y_shot)
                 y_query_list.append(y_query)
 
+            # Stack and reshape to form the task
             x_shot = np.stack(x_shot_list, axis=0)  # (n_way, n_shot, seq_len, feat_dim)
             x_query = np.stack(x_query_list, axis=0)  # (n_way, n_query, seq_len, feat_dim)
-            y_shot = np.stack(y_shot_list, axis=0)  # (n_way, n_shot)
-            y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query)
+            y_shot = np.stack(y_shot_list, axis=0)  # (n_way, n_shot, pre_len, feat_dim)
+            y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query, pre_len, feat_dim)
+            x_shot = x_shot.reshape(-1, self.seq_len, x_shot.shape[-1])  # (n_way * n_shot, seq_len, feat_dim)
+            x_query = x_query.reshape(-1, self.seq_len, x_query.shape[-1])  # (n_way * n_query, seq_len, feat_dim)
+            y_shot = y_shot.reshape(-1, self.pred_len, y_shot.shape[-1])  # (n_way * n_shot, pre_len, feat_dim)
+            y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
+
             self.tasks.append((x_shot, x_query, y_shot, y_query))
 
     def __len__(self):
