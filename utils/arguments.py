@@ -31,6 +31,9 @@ def parse_launch_parameters():
     parser.add_argument('--load',
                         help='path to loaded model',
                         type=str, default=None)
+    parser.add_argument('--n_step',
+                        help='number of inner loop gradient steps',
+                        type=int, default=5)
 
     # data loader
     parser.add_argument('--data', type=str, default='custom',

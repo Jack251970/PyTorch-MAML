@@ -69,7 +69,7 @@ class MAML(Module):
             # 不调用backward，而是直接计算loss关于params的梯度
             # 这样的话，模型的参数暂时不会更新，所有任务都会从同一个初始参数开始进行内环更新
             grads = autograd.grad(loss, params.values(),
-                                  create_graph=(not detach and not inner_args['first_order']),
+                                  create_graph=(not detach and not False),
                                   only_inputs=True, allow_unused=True)
             # parameter update
             updated_params = OrderedDict()
@@ -77,23 +77,14 @@ class MAML(Module):
                 if grad is None:
                     updated_param = param
                 else:
-                    if inner_args['weight_decay'] > 0:
-                        grad = grad + inner_args['weight_decay'] * param
-                    if inner_args['momentum'] > 0:
-                        grad = grad + inner_args['momentum'] * mom_buffer[name]
-                        mom_buffer[name] = grad
-                    if 'encoder' in name:
-                        lr = inner_args['encoder_lr']
-                    else:
-                        raise ValueError('invalid parameter name')
-                    updated_param = param - lr * grad
+                    updated_param = param - self.args.learning_rate * grad
                 if detach:
                     updated_param = updated_param.detach().requires_grad_(True)
                 updated_params[name] = updated_param
 
         return updated_params, mom_buffer
 
-    def _adapt(self, x, y, params, episode, inner_args, meta_train):
+    def _adapt(self, x, y, params, episode, meta_train):
         """
         Performs inner-loop adaptation in MAML.
 
@@ -103,7 +94,6 @@ class MAML(Module):
           y (int tensor, [n_way * n_shot, P, D]): per-episode support set labels.
           params (dict): a dictionary of parameters at meta-initialization.
           episode (int): the current episode index.
-          inner_args (dict): inner-loop optimization hyperparameters.
           meta_train (bool): if True, the model is in meta-training.
 
         Returns:
@@ -115,9 +105,6 @@ class MAML(Module):
         # Initializes a dictionary of momentum buffer for gradient descent in the
         # inner loop. It has the same set of keys as the parameter dictionary.
         mom_buffer = OrderedDict()
-        if inner_args['momentum'] > 0:
-            for name, param in params.items():
-                mom_buffer[name] = torch.zeros_like(param)
         params_keys = tuple(params.keys())
         mom_buffer_keys = tuple(mom_buffer.keys())
 
@@ -137,30 +124,29 @@ class MAML(Module):
 
             detach = not torch.is_grad_enabled()  # detach graph in the first pass
             self.is_first_pass(detach)
-            params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, int(episode), inner_args, detach)
+            params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, int(episode), detach)
             state = tuple(t if t.requires_grad else t.clone().requires_grad_(True)
                           for t in tuple(params.values()) + tuple(mom_buffer.values()))
             return state
 
-        for step in range(inner_args['n_step']):
+        for step in range(self.args.n_step):
             if self.efficient:  # checkpointing
                 state = tuple(params.values()) + tuple(mom_buffer.values())
                 state = cp.checkpoint(_inner_iter_cp, torch.as_tensor(episode), *state)
                 params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
                 mom_buffer = OrderedDict(zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
             else:
-                params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, episode, inner_args, not meta_train)
+                params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, episode, not meta_train)
 
         return params
 
-    def forward(self, x_shot, x_query, y_shot, inner_args, meta_train):
+    def forward(self, x_shot, x_query, y_shot, meta_train):
         """
         Args:
           x_shot (float tensor, [n_episode, n_way * n_shot, H, D]): support sets.
           x_query (float tensor, [n_episode, n_way * n_query, P, D]): query sets.
             (T: transforms, C: channels, H: height, W: width)
           y_shot (int tensor, [n_episode, n_way * n_shot, H, D]): support set labels.
-          inner_args (dict, optional): inner-loop hyperparameters.
           meta_train (bool): if True, the model is in meta-training.
 
         Returns:
@@ -172,9 +158,10 @@ class MAML(Module):
 
         # a dictionary of parameters that will be updated in the inner loop
         params = OrderedDict(self.named_parameters())
-        for name in list(params.keys()):
-            if not params[name].requires_grad or any(s in name for s in inner_args['frozen'] + ['temp']):
-                params.pop(name)
+        # Frozen if needed
+        # for name in list(params.keys()):
+        #     if not params[name].requires_grad or any(s in name for s in self.args.frozen + ['temp']):
+        #         params.pop(name)
 
         y_query = []
 
@@ -188,7 +175,7 @@ class MAML(Module):
                 for m in self.modules():
                     if isinstance(m, BatchNorm2d) and not m.is_episodic():
                         m.eval()
-            updated_params = self._adapt(x_shot[ep], y_shot[ep], params, ep, inner_args, meta_train)
+            updated_params = self._adapt(x_shot[ep], y_shot[ep], params, ep, meta_train)
             # inner-loop validation: 计算更新后参数在查询集上的表现，并记录梯度
             with torch.set_grad_enabled(meta_train):
                 self.eval()
