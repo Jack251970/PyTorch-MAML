@@ -1,19 +1,15 @@
-import argparse
 import os
 import random
 import time
-from collections import OrderedDict
 
 import yaml
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
-import datasets
 import models
 import utils
 import utils.optimizers as optimizers
@@ -108,13 +104,13 @@ def main(config):
         model = models.load(ckpt, args)
         optimizer, lr_scheduler = optimizers.load(ckpt, model.parameters())
         start_epoch = ckpt['training']['epoch'] + 1
-        max_va = ckpt['training']['max_va']
+        min_vl = ckpt['training']['min_vl']
     else:
         model = models.make(args)
         optimizer, lr_scheduler = optimizers.make(
             config['optimizer'], model.parameters(), **config['optimizer_args'])
         start_epoch = 1
-        max_va = 0.
+        min_vl = float('inf')
 
     if args.efficient:
         model.go_efficient()
@@ -128,13 +124,13 @@ def main(config):
     ##### Training and evaluation #####
 
     # 'tl': meta-train loss
-    # 'ta': meta-train accuracy
     # 'vl': meta-val loss
-    # 'va': meta-val accuracy
-    aves_keys = ['tl', 'ta', 'vl', 'va']
+    aves_keys = ['tl', 'vl']
     trlog = dict()
     for k in aves_keys:
         trlog[k] = []
+
+    loss_fn = nn.MSELoss()
 
     # 使用多个epoch不断训练寻找最佳的初始参数，使得模型在少量梯度更新后能有较好的表现
     # 一个train_loader中所提供的多个Batch of tasks不一定能确保最终的收敛，因此在工程中应当用多个epoch来训练模型
@@ -151,19 +147,19 @@ def main(config):
         # 在每一代中，我们会选出多个task（即多个训练数据），然后对每个task进行内环更新，最后再进行一次外环更新。
         # train_loader中每一个data对应一个task，包括支持集和查询集。
         for data in tqdm(train_loader, desc='meta-train', leave=False):  # 获取多个Batch of tasks并进行训练
-            x_shot, x_query, y_shot, y_query = data
+            x_shot, x_query, y_shot, y_query = data  # [n_episode, n_way * n_shot, H, D]
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
             x_query, y_query = x_query.cuda(), y_query.cuda()
 
-            logits = model(x_shot, x_query, y_shot, inner_args, meta_train=True)
-            logits = logits.flatten(0, 1)
-            labels = y_query.flatten()
+            # prediction labels
+            logits = model(x_shot, x_query, y_shot, inner_args, meta_train=True)  # [n_episode, n_way * n_shot, H, D]
 
-            pred = torch.argmax(logits, dim=-1)
-            acc = utils.compute_acc(pred, labels)
-            loss = F.cross_entropy(logits, labels)
+            f_dim = -1 if args.features == 'MS' else 0
+            preds = logits[..., f_dim]
+            labels = y_query[..., f_dim]
+
+            loss = loss_fn(preds, labels)
             aves['tl'].update(loss.item(), 1)
-            aves['ta'].update(acc, 1)
 
             optimizer.zero_grad()
             loss.backward()
@@ -184,14 +180,13 @@ def main(config):
                 x_query, y_query = x_query.cuda(), y_query.cuda()
 
                 logits = model(x_shot, x_query, y_shot, inner_args, meta_train=False)
-                logits = logits.flatten(0, 1)
-                labels = y_query.flatten()
 
-                pred = torch.argmax(logits, dim=-1)
-                acc = utils.compute_acc(pred, labels)
-                loss = F.cross_entropy(logits, labels)
+                f_dim = -1 if args.features == 'MS' else 0
+                preds = logits[..., f_dim]
+                labels = y_query[..., f_dim]
+
+                loss = loss_fn(preds, labels)
                 aves['vl'].update(loss.item(), 1)
-                aves['va'].update(acc, 1)
 
         if lr_scheduler is not None:
             lr_scheduler.step()
@@ -206,15 +201,13 @@ def main(config):
                                     (epoch - start_epoch + 1) * (config['epoch'] - start_epoch + 1))
 
         # formats output
-        log_str = 'epoch {}, meta-train {:.4f}|{:.4f}'.format(
-            str(epoch), aves['tl'], aves['ta'])
+        log_str = 'epoch {}, meta-train {:.4f}'.format(
+            str(epoch), aves['tl'])
         writer.add_scalars('loss', {'meta-train': aves['tl']}, epoch)
-        writer.add_scalars('acc', {'meta-train': aves['ta']}, epoch)
 
         if eval_val:
-            log_str += ', meta-val {:.4f}|{:.4f}'.format(aves['vl'], aves['va'])
+            log_str += ', meta-val {:.4f}'.format(aves['vl'])
             writer.add_scalars('loss', {'meta-val': aves['vl']}, epoch)
-            writer.add_scalars('acc', {'meta-val': aves['va']}, epoch)
 
         log_str += ', {} {}/{}'.format(t_epoch, t_elapsed, t_estimate)
         utils.log(log_str)
@@ -227,7 +220,7 @@ def main(config):
 
         training = {
             'epoch': epoch,
-            'max_va': max(max_va, aves['va']),
+            'min_vl': min(min_vl, aves['vl']),
 
             'optimizer': config['optimizer'],
             'optimizer_args': config['optimizer_args'],
@@ -247,8 +240,8 @@ def main(config):
         torch.save(ckpt, os.path.join(ckpt_path, 'epoch-last.pth'))
         torch.save(trlog, os.path.join(ckpt_path, 'trlog.pth'))
 
-        if aves['va'] > max_va:
-            max_va = aves['va']
+        if aves['vl'] < min_vl:
+            min_vl = aves['vl']
             torch.save(ckpt, os.path.join(ckpt_path, 'max-va.pth'))
 
         writer.flush()

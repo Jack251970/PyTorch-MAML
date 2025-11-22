@@ -28,6 +28,7 @@ def load(ckpt, args):
 class MAML(Module):
     def __init__(self, args, ckpt = None):
         super(MAML, self).__init__()
+        self.args = args
         self.encoder = DLinearModel(args)
         if ckpt is not None:
             self.encoder.load_state_dict(ckpt['encoder_state_dict'])
@@ -59,6 +60,11 @@ class MAML(Module):
         with torch.enable_grad():
             # forward pass
             logits = self._inner_forward(x, params, episode)
+
+            f_dim = -1 if self.args.features == 'MS' else 0
+            logits = logits[..., f_dim]
+            y = y[..., f_dim]
+
             loss = loss_fn(logits, y)
             # backward pass
             # 不调用backward，而是直接计算loss关于params的梯度
