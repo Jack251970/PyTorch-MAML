@@ -235,10 +235,15 @@ def main(config):
             'lr_scheduler_state_dict': lr_scheduler.state_dict()
             if lr_scheduler is not None else None,
         }
+        ckpt = {
+            'file': __file__,
+            'config': config,
+            'encoder_state_dict': model_.encoder.state_dict(),
+            'training': training,
+        }
 
         # 'epoch-last.pth': saved at the latest epoch
         # 'max-va.pth': saved when validation accuracy is at its maximum
-        model._save_to_state_dict()
         torch.save(ckpt, os.path.join(ckpt_path, 'epoch-last.pth'))
         torch.save(trlog, os.path.join(ckpt_path, 'trlog.pth'))
 

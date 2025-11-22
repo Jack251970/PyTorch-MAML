@@ -30,7 +30,7 @@ class MAML(Module):
         super(MAML, self).__init__()
         self.encoder = DLinearModel(args)
         if ckpt is not None:
-            self.encoder.load_state_dict(ckpt)
+            self.encoder.load_state_dict(ckpt['encoder_state_dict'])
 
     def _inner_forward(self, x, params, episode):
         """ Forward pass for the inner loop. """
