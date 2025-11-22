@@ -132,8 +132,7 @@ class MAML(Module):
 
             detach = not torch.is_grad_enabled()  # detach graph in the first pass
             self.is_first_pass(detach)
-            params, mom_buffer = self._inner_iter(
-                x, y, params, mom_buffer, int(episode), inner_args, detach)
+            params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, int(episode), inner_args, detach)
             state = tuple(t if t.requires_grad else t.clone().requires_grad_(True)
                           for t in tuple(params.values()) + tuple(mom_buffer.values()))
             return state
