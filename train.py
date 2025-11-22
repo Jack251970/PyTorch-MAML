@@ -139,8 +139,8 @@ def main(device):
         # train_loader中每一个data对应一个task，包括支持集和查询集。
         for data in tqdm(train_loader, desc='meta-train', leave=False):  # 获取多个Batch of tasks并进行训练
             x_shot, x_query, y_shot, y_query = data  # [n_episode, n_way * n_shot, H, D]
-            x_shot, y_shot = x_shot.to(device), y_shot.to(device)
-            x_query, y_query = x_query.to(device), y_query.to(device)
+            x_shot, y_shot = x_shot.to(device).float(), y_shot.to(device).float()
+            x_query, y_query = x_query.to(device).float(), y_query.to(device).float()
 
             # prediction labels
             logits = model(x_shot, x_query, y_shot, meta_train=True)  # [n_episode, n_way * n_shot, H, D]
@@ -167,8 +167,8 @@ def main(device):
 
             for data in tqdm(val_loader, desc='meta-val', leave=False):
                 x_shot, x_query, y_shot, y_query = data
-                x_shot, y_shot = x_shot.to(device), y_shot.to(device)
-                x_query, y_query = x_query.to(device), y_query.to(device)
+                x_shot, y_shot = x_shot.to(device).float(), y_shot.to(device).float()
+                x_query, y_query = x_query.to(device).float(), y_query.to(device).float()
 
                 logits = model(x_shot, x_query, y_shot, meta_train=False)
 
