@@ -43,9 +43,9 @@ class DLinearModel(Module):
 
     def init_linears(self):
         self.Linear_Seasonal.weight = nn.Parameter(
-            (1 / self.seq_len) * torch.ones([self.pred_len, self.seq_len]))
+            (1 / self.seq_len) * torch.ones([self.pred_len, self.seq_len]))  # float32
         self.Linear_Trend.weight = nn.Parameter(
-            (1 / self.seq_len) * torch.ones([self.pred_len, self.seq_len]))
+            (1 / self.seq_len) * torch.ones([self.pred_len, self.seq_len]))  # float32
 
     def encoder(self, x, params=None, episode=None):
         seasonal_init, trend_init = self.decompsition(x)
