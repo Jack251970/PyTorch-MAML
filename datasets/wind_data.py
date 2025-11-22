@@ -188,7 +188,7 @@ class DatasetWind(Dataset):
 
         rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
 
-        random_times = 100000
+        random_times = 10000
         for _ in range(random_times):
             # 选取n_way个zone构建一个任务
             chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
@@ -225,6 +225,8 @@ class DatasetWind(Dataset):
             y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
 
             self.tasks.append((x_shot, x_query, y_shot, y_query))
+
+        pass
 
     def __len__(self):
         return len(self.tasks)
