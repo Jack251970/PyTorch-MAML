@@ -54,7 +54,7 @@ def get_data(data_flag):
     return data_set, data_loader
 
 
-def main(config):
+def main(config, device):
     random.seed(0)
     np.random.seed(0)
     torch.manual_seed(0)
@@ -100,13 +100,14 @@ def main(config):
 
     inner_args = utils.config_inner_args(config.get('inner_args'))
     if config.get('load'):
-        ckpt = torch.load(config['load'], map_location=torch.device('cpu'))  # load parameters from a checkpoint
-        model = models.load(ckpt, args)
+        # ckpt = torch.load(config['load'], map_location=torch.device('cpu'))  # load parameters from a checkpoint
+        ckpt = torch.load(config['load'])
+        model = models.load(ckpt, args).to(device)
         optimizer, lr_scheduler = optimizers.load(ckpt, model.parameters())
         start_epoch = ckpt['training']['epoch'] + 1
         min_vl = ckpt['training']['min_vl']
     else:
-        model = models.make(args)
+        model = models.make(args).to(device)
         optimizer, lr_scheduler = optimizers.make(
             config['optimizer'], model.parameters(), **config['optimizer_args'])
         start_epoch = 1
@@ -148,8 +149,8 @@ def main(config):
         # train_loader中每一个data对应一个task，包括支持集和查询集。
         for data in tqdm(train_loader, desc='meta-train', leave=False):  # 获取多个Batch of tasks并进行训练
             x_shot, x_query, y_shot, y_query = data  # [n_episode, n_way * n_shot, H, D]
-            x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
-            x_query, y_query = x_query.cuda(), y_query.cuda()
+            x_shot, y_shot = x_shot.to(device), y_shot.to(device)
+            x_query, y_query = x_query.to(device), y_query.to(device)
 
             # prediction labels
             logits = model(x_shot, x_query, y_shot, inner_args, meta_train=True)  # [n_episode, n_way * n_shot, H, D]
@@ -176,8 +177,8 @@ def main(config):
 
             for data in tqdm(val_loader, desc='meta-val', leave=False):
                 x_shot, x_query, y_shot, y_query = data
-                x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
-                x_query, y_query = x_query.cuda(), y_query.cuda()
+                x_shot, y_shot = x_shot.to(device), y_shot.to(device)
+                x_query, y_query = x_query.to(device), y_query.to(device)
 
                 logits = model(x_shot, x_query, y_shot, inner_args, meta_train=False)
 
@@ -251,4 +252,5 @@ if __name__ == '__main__':
     args = parse_launch_parameters()
     config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
     utils.set_gpu(str(args.gpu))
-    main(config)
+    device = torch.device('cuda:{}'.format(str(args.gpu)))
+    main(config, device)
