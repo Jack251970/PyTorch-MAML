@@ -128,8 +128,7 @@ class MAML(Module):
               - 2nd time with torch.enable_grad() for computing gradients.
             """
             params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
-            mom_buffer = OrderedDict(
-                zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
+            mom_buffer = OrderedDict(zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
 
             detach = not torch.is_grad_enabled()  # detach graph in the first pass
             self.is_first_pass(detach)
@@ -144,11 +143,9 @@ class MAML(Module):
                 state = tuple(params.values()) + tuple(mom_buffer.values())
                 state = cp.checkpoint(_inner_iter_cp, torch.as_tensor(episode), *state)
                 params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
-                mom_buffer = OrderedDict(
-                    zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
+                mom_buffer = OrderedDict(zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
             else:
-                params, mom_buffer = self._inner_iter(
-                    x, y, params, mom_buffer, episode, inner_args, not meta_train)
+                params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, episode, inner_args, not meta_train)
 
         return params
 
@@ -172,8 +169,7 @@ class MAML(Module):
         # a dictionary of parameters that will be updated in the inner loop
         params = OrderedDict(self.named_parameters())
         for name in list(params.keys()):
-            if not params[name].requires_grad or \
-                    any(s in name for s in inner_args['frozen'] + ['temp']):
+            if not params[name].requires_grad or any(s in name for s in inner_args['frozen'] + ['temp']):
                 params.pop(name)
 
         y_query = []
@@ -188,8 +184,7 @@ class MAML(Module):
                 for m in self.modules():
                     if isinstance(m, BatchNorm2d) and not m.is_episodic():
                         m.eval()
-            updated_params = self._adapt(
-                x_shot[ep], y_shot[ep], params, ep, inner_args, meta_train)
+            updated_params = self._adapt(x_shot[ep], y_shot[ep], params, ep, inner_args, meta_train)
             # inner-loop validation: 计算更新后参数在查询集上的表现，并记录梯度
             with torch.set_grad_enabled(meta_train):
                 self.eval()
