@@ -152,12 +152,12 @@ def main():
                                     (epoch - start_epoch + 1) * (args.train_epochs - start_epoch + 1))
 
         # formats output
-        log_str = 'epoch {}, meta-train {:.4f}'.format(
+        log_str = 'epoch {}, meta-train {:.6f}'.format(
             str(epoch), aves['tl'])
         writer.add_scalars('loss', {'meta-train': aves['tl']}, epoch)
 
         if eval_val:
-            log_str += ', meta-val {:.4f}'.format(aves['vl'])
+            log_str += ', meta-val {:.6f}'.format(aves['vl'])
             writer.add_scalars('loss', {'meta-val': aves['vl']}, epoch)
 
         log_str += ', {} {}/{}'.format(t_epoch, t_elapsed, t_estimate)
