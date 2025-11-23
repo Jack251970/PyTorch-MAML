@@ -19,8 +19,8 @@ def get_search_space():
     default_config = {
         'task_name': {'_type': 'single', '_value': 'long_term_forecast'},
         'is_training': {'_type': 'single', '_value': 0},
-        # 'test_checkpoint_path': {'_type': 'single',
-        #                          '_value': 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'},
+        'test_checkpoint_path': {'_type': 'single',
+                                 '_value': 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'},
         'des': {'_type': 'single', '_value': 'Exp'},
         'use_gpu': {'_type': 'single', '_value': True},
         'embed': {'_type': 'single', '_value': 'timeF'},
