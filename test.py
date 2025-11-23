@@ -17,12 +17,6 @@ def main():
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
-    ##### Dataset #####
-
-    # meta-test
-    dataset, loader = get_data(args, 'test')
-    utils.log('meta-test set: {} (x{})'.format(dataset[0][0].shape, len(dataset)))
-
     ##### Model #####
 
     args.load = 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'
@@ -37,31 +31,41 @@ def main():
 
     utils.log('num params: {}'.format(utils.compute_n_params(model)))
 
-    ##### Evaluation #####
+    for i in range(1, 11):
+        args.data_path = f"wind/Zone{i}/Zone{i}.csv"
+        utils.log('Testing on data: ' + args.data_path)
 
-    model.eval()
-    aves_va = utils.AverageMeter()
-    va_lst = []
+        ##### Dataset #####
 
-    loss_fn = nn.MSELoss()
+        # meta-test
+        dataset, loader = get_data(args, 'test')
+        utils.log('meta-test set: {} (x{})'.format(dataset[0][0].shape, len(dataset)))
 
-    for data in tqdm(loader, leave=False):
-        x_shot, x_query, y_shot, y_query = data
-        x_shot, y_shot = x_shot.to(device).float(), y_shot.to(device).float()
-        x_query, y_query = x_query.to(device).float(), y_query.to(device).float()
+        ##### Evaluation #####
 
-        logits = model(x_shot, x_query, y_shot, meta_train=False)
+        model.eval()
+        aves_va = utils.AverageMeter()
+        va_lst = []
 
-        f_dim = -1 if args.features == 'MS' else 0
-        preds = logits[..., f_dim]
-        labels = y_query[..., f_dim]
+        loss_fn = nn.MSELoss()
 
-        loss = loss_fn(preds, labels)
-        aves_va.update(loss.item(), 1)
-        va_lst.append(loss.item())
+        for data in tqdm(loader, leave=False):
+            x_shot, x_query, y_shot, y_query = data
+            x_shot, y_shot = x_shot.to(device).float(), y_shot.to(device).float()
+            x_query, y_query = x_query.to(device).float(), y_query.to(device).float()
 
-    print('test: loss={:.2f} +- {:.2f} (%)'.format(aves_va.item() * 100,
-                                                   utils.mean_confidence_interval(va_lst) * 100))
+            logits = model(x_shot, x_query, y_shot, meta_train=False)
+
+            f_dim = -1 if args.features == 'MS' else 0
+            preds = logits[..., f_dim]
+            labels = y_query[..., f_dim]
+
+            loss = loss_fn(preds, labels)
+            aves_va.update(loss.item(), 1)
+            va_lst.append(loss.item())
+
+        print('test: loss={:.2f} +- {:.2f} (%)'.format(aves_va.item(),
+                                                       utils.mean_confidence_interval(va_lst)))
 
 
 if __name__ == '__main__':
