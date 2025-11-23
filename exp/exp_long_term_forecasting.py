@@ -264,26 +264,26 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         test_data, test_loader = self._get_data(data_flag='test', enter_flag='test', _try_model=self.try_model)
         if test:
             self.print_content('loading model')
-            # CHANGE: Load the best model from meta-learning
-            # path = os.path.join(self.root_checkpoints_path, setting)
-            # best_model_path = path + '/' + self.checkpoints_file
-            # if os.path.exists(best_model_path):
-            #     if self.device == torch.device('cpu'):
-            #         self.model.load_state_dict(torch.load(best_model_path, map_location=torch.device('cpu')))
-            #     else:
-            #         self.model.load_state_dict(torch.load(best_model_path))
-            # else:
-            #     raise FileNotFoundError('You need to train this model before testing it!')
-            # TODO: Change best model path if need
-            best_model_path = 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'
-            if os.path.exists(best_model_path):
-                if self.device == torch.device('cpu'):
-                    ckpt = torch.load(best_model_path, map_location=torch.device('cpu'))
+            if self.args.test_checkpoint_path is None:
+                path = os.path.join(self.root_checkpoints_path, setting)
+                best_model_path = path + '/' + self.checkpoints_file
+                if os.path.exists(best_model_path):
+                    if self.device == torch.device('cpu'):
+                        self.model.load_state_dict(torch.load(best_model_path, map_location=torch.device('cpu')))
+                    else:
+                        self.model.load_state_dict(torch.load(best_model_path))
                 else:
-                    ckpt = torch.load(best_model_path)
-                self.model.load_state_dict(ckpt['encoder_state_dict'])
+                    raise FileNotFoundError('You need to train this model before testing it!')
             else:
-                raise FileNotFoundError('You need to train this model before testing it!')
+                best_model_path = self.args.test_checkpoint_path
+                if os.path.exists(best_model_path):
+                    if self.device == torch.device('cpu'):
+                        ckpt = torch.load(best_model_path, map_location=torch.device('cpu'))
+                    else:
+                        ckpt = torch.load(best_model_path)
+                    self.model.load_state_dict(ckpt['encoder_state_dict'])
+                else:
+                    raise FileNotFoundError('You need to train this model before testing it!')
 
         if check_folder:
             self._check_folders([self.root_test_results_path, self.root_results_path])
