@@ -1,46 +1,38 @@
-import argparse
 import random
 
-import yaml
 import torch
 import torch.nn as nn
 import numpy as np
 from tqdm import tqdm
-from torch.utils.data import DataLoader
 
-import datasets
 import models
 import utils
 from utils.arguments import parse_launch_parameters
+from utils.basic import acquire_device, get_data
 
 
-def main(config):
+def main():
     random.seed(0)
     np.random.seed(0)
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
 
     ##### Dataset #####
 
-    dataset = datasets.make(config['dataset'], **config['test'])
-    utils.log('meta-test set: {} (x{}), {}'.format(
-        dataset[0][0].shape, len(dataset), dataset.n_classes))
-    loader = DataLoader(dataset, config['test']['n_episode'],
-                        collate_fn=datasets.collate_fn, num_workers=1, pin_memory=True)
+    # meta-test
+    dataset, loader = get_data(args, 'test')
+    utils.log('meta-test set: {} (x{})'.format(dataset[0][0].shape, len(dataset)))
 
     ##### Model #####
 
-    ckpt = torch.load(config['load'])
-    inner_args = utils.config_inner_args(config.get('inner_args'))
-    model = models.load(ckpt, load_clf=(not inner_args['reset_classifier']))
+    if args.use_gpu:
+        ckpt = torch.load(args.load)
+    else:
+        ckpt = torch.load(args.load, map_location=torch.device('cpu'))
+    model = models.load(ckpt, args).to(device)
 
     if args.efficient:
         model.go_efficient()
-
-    if config.get('_parallel'):
-        model = nn.DataParallel(model)
 
     utils.log('num params: {}'.format(utils.compute_n_params(model)))
 
@@ -50,20 +42,14 @@ def main(config):
     aves_va = utils.AverageMeter()
     va_lst = []
 
-    for epoch in range(1, config['epoch'] + 1):
+    for epoch in range(1, args.train_epochs + 1):
         for data in tqdm(loader, leave=False):
             x_shot, x_query, y_shot, y_query = data
             x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
             x_query, y_query = x_query.cuda(), y_query.cuda()
 
-            if inner_args['reset_classifier']:
-                if config.get('_parallel'):
-                    model.module.reset_classifier()
-                else:
-                    model.reset_classifier()
-
-            logits = model(x_shot, x_query, y_shot, inner_args, meta_train=False)
-            logits = logits.view(-1, config['test']['n_way'])
+            logits = model(x_shot, x_query, y_shot, meta_train=False)
+            logits = logits.view(-1, args.n_way)
             labels = y_query.view(-1)
 
             pred = torch.argmax(logits, dim=1)
@@ -78,6 +64,5 @@ def main(config):
 
 if __name__ == '__main__':
     args = parse_launch_parameters()
-    config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
-    utils.set_gpu(str(args.gpu))
-    main(config)
+    device = acquire_device(args)
+    main()
