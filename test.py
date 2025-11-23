@@ -17,9 +17,12 @@ def main():
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
+    checkpoint_path = './save/meta_wind_5_way_5_shot_2025_11_23_16_01_05'
+
     ##### Model #####
 
-    args.load = 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'
+    args.load = f'{checkpoint_path}/min-vl.pth'
+    utils.set_log_path(checkpoint_path)
     if args.use_gpu:
         ckpt = torch.load(args.load)
     else:
