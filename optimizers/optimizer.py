@@ -30,7 +30,7 @@ def get_search_space():
     dataset_config = {
         'data': {'_type': 'single', '_value': 'custom'},
         'features': {'_type': 'single', '_value': 'MS'},
-        'root_path': {'_type': 'single', '_value': './dataset/'},
+        'root_path': {'_type': 'single', '_value': './.materials/'},
         # 'data_path': {'_type': 'single', '_value': 'wind/Zone1/Zone1.csv'},
         'data_path': {'_type': 'choice', '_value': [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
         # 'data_path': {'_type': 'choice', '_value': ['wind/Zone1,2/Zone1.csv',
