@@ -31,10 +31,7 @@ def get_search_space():
         'data': {'_type': 'single', '_value': 'custom'},
         'features': {'_type': 'single', '_value': 'MS'},
         'root_path': {'_type': 'single', '_value': './.materials/'},
-        # 'data_path': {'_type': 'single', '_value': 'wind/Zone1/Zone1.csv'},
         'data_path': {'_type': 'choice', '_value': [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
-        # 'data_path': {'_type': 'choice', '_value': ['wind/Zone1,2/Zone1.csv',
-        #                                             'wind/Zone1,2/Zone2.csv']},
         'target': {'_type': 'single', '_value': 'wind'},
         'enc_in': {'_type': 'single', '_value': 5},
         'dec_in': {'_type': 'single', '_value': 5},
@@ -59,23 +56,8 @@ def get_search_space():
         # 'individual': {'_type': 'single', '_value': True},
     }
 
-    fedformer_config = {
-        # 'd_model': {'_type': 'single', '_value': 64},
-        # 'n_heads': {'_type': 'single', '_value': 4},
-        # 'd_ff': {'_type': 'single', '_value': 256},
-    }
-
-    crossformer_config = {
-        # 'd_model': {'_type': 'single', '_value': 64},
-        # 'n_heads': {'_type': 'single', '_value': 4},
-        # 'd_ff': {'_type': 'single', '_value': 256},
-    }
-
     model_configs = {
         'DLinear': dlinear_config,
-        'FEDformer': fedformer_config,
-        'FEDLinear': dlinear_config,
-        'Crossformer': crossformer_config
     }
 
     return [default_config, dataset_config, learning_config, period_config], model_configs
