@@ -58,7 +58,7 @@ def main():
             ckpt = torch.load(args.load, map_location=torch.device('cpu'))
         model = models.load(ckpt, args).to(device)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-        optimizer.load_state_dict(ckpt['optimizer_state_dict'])
+        optimizer.load_state_dict(ckpt['training']['optimizer_state_dict'])
         start_epoch = ckpt['training']['epoch'] + 1
         min_vl = ckpt['training']['min_vl']
     else:
