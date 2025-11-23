@@ -78,6 +78,6 @@ def get_data(args, data_flag):
         num_workers=args.num_workers,
         drop_last=drop_last,
         pin_memory=pin_memory,
-        persistent_workers=True
+        persistent_workers=args.num_workers != 0
     )
     return data_set, data_loader

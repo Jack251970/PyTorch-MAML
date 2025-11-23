@@ -107,7 +107,7 @@ def parse_launch_parameters():
                         help='the length of segmen-wise iteration of SegRNN')
 
     # optimization
-    parser.add_argument('--num_workers', type=int, default=12, help='data loader num workers')
+    parser.add_argument('--num_workers', type=int, default=0, help='data loader num workers')
     parser.add_argument('--itr', type=int, default=1, help='deprecated')
     parser.add_argument('--train_epochs', type=int, default=150, help='train epochs')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size of train input data')
