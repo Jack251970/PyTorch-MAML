@@ -38,12 +38,12 @@ def main(device):
     ##### Dataset #####
 
     # meta-train
-    train_set, train_loader = get_data('train')
+    train_set, train_loader = get_data(args, 'train')
     utils.log('meta-train set: {} (x{})'.format(train_set[0][0].shape, len(train_set)))
 
     # meta-val
     eval_val = True
-    val_set, val_loader = get_data('val')
+    val_set, val_loader = get_data(args, 'val')
     utils.log('meta-val set: {} (x{})'.format(val_set[0][0].shape, len(val_set)))
 
     ##### Model and Optimizer #####
