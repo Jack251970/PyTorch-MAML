@@ -183,6 +183,7 @@ def main():
         if aves['vl'] < min_vl:
             min_vl = aves['vl']
             torch.save(ckpt, os.path.join(ckpt_path, 'min-vl.pth'))
+            print(f'Saved epoch {epoch} with min-vl {min_vl}')
 
         writer.flush()
 
