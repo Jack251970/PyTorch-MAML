@@ -2,6 +2,7 @@ import random
 
 import torch
 import numpy as np
+from torch import nn
 from tqdm import tqdm
 
 import models
@@ -24,6 +25,7 @@ def main():
 
     ##### Model #####
 
+    args.load = 'save/meta_wind_5_way_5_shot_2025_11_23_16_01_05/min-vl.pth'
     if args.use_gpu:
         ckpt = torch.load(args.load)
     else:
@@ -41,24 +43,25 @@ def main():
     aves_va = utils.AverageMeter()
     va_lst = []
 
-    for epoch in range(1, args.train_epochs + 1):
-        for data in tqdm(loader, leave=False):
-            x_shot, x_query, y_shot, y_query = data
-            x_shot, y_shot = x_shot.cuda(), y_shot.cuda()
-            x_query, y_query = x_query.cuda(), y_query.cuda()
+    loss_fn = nn.MSELoss()
 
-            logits = model(x_shot, x_query, y_shot, meta_train=False)
-            logits = logits.view(-1, args.n_way)
-            labels = y_query.view(-1)
+    for data in tqdm(loader, leave=False):
+        x_shot, x_query, y_shot, y_query = data
+        x_shot, y_shot = x_shot.to(device).float(), y_shot.to(device).float()
+        x_query, y_query = x_query.to(device).float(), y_query.to(device).float()
 
-            pred = torch.argmax(logits, dim=1)
-            acc = utils.compute_acc(pred, labels)
-            aves_va.update(acc, 1)
-            va_lst.append(acc)
+        logits = model(x_shot, x_query, y_shot, meta_train=False)
 
-        print('test epoch {}: acc={:.2f} +- {:.2f} (%)'.format(
-            epoch, aves_va.item() * 100,
-                   utils.mean_confidence_interval(va_lst) * 100))
+        f_dim = -1 if args.features == 'MS' else 0
+        preds = logits[..., f_dim]
+        labels = y_query[..., f_dim]
+
+        loss = loss_fn(preds, labels)
+        aves_va.update(loss.item(), 1)
+        va_lst.append(loss.item())
+
+    print('test: loss={:.2f} +- {:.2f} (%)'.format(aves_va.item() * 100,
+                                                   utils.mean_confidence_interval(va_lst) * 100))
 
 
 if __name__ == '__main__':
