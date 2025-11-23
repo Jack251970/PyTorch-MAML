@@ -15,7 +15,7 @@ from utils.arguments import parse_launch_parameters
 from utils.basic import acquire_device, adjust_learning_rate, get_data
 
 
-def main(device):
+def main():
     random.seed(0)
     np.random.seed(0)
     torch.manual_seed(0)
