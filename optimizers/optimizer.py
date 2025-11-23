@@ -63,7 +63,6 @@ def get_search_space():
     return [default_config, dataset_config, learning_config, period_config], model_configs
 
 
-# 'QSQF-C-forward',
 h = HyperParameterOptimizer(script_mode=False, models=['DLinear'],
                             get_search_space=get_search_space, link_fieldnames_data=link_fieldnames_data)
 h.config_optimizer_settings(root_path='.', data_csv_file='wind.csv',
