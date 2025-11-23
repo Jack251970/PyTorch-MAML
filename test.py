@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import models
 import utils
-from utils.arguments import parse_launch_parameters
+from utils.arguments import parse_meta_launch_parameters
 from utils.basic import acquire_device, get_data
 
 
@@ -63,6 +63,6 @@ def main():
 
 
 if __name__ == '__main__':
-    args = parse_launch_parameters()
+    args = parse_meta_launch_parameters()
     device = acquire_device(args)
     main()

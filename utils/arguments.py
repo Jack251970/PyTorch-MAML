@@ -1,7 +1,7 @@
 import argparse
 
 
-def parse_launch_parameters():
+def parse_meta_launch_parameters():
     parser = argparse.ArgumentParser(description='MAML + Time Series Library')
 
     # meta learning
