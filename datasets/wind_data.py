@@ -103,8 +103,7 @@ class DatasetWind(Dataset):
     Wind dataset for meta-learning
     """
     def __init__(self, args, root_path, flag='train', size=None, features='S', data_path='ETTh1.csv', target='OT',
-                 scale=True,
-                 scaler='StandardScaler', timeenc=0, freq='h', lag=0, seasonal_patterns=None):
+                 scale=True, scaler='StandardScaler', timeenc=0, freq='h', lag=0, seasonal_patterns=None):
         # size [seq_len, label_len, pred_len]
         self.args = args
         # info
