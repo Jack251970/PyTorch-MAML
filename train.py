@@ -176,13 +176,13 @@ def main():
         }
 
         # 'epoch-last.pth': saved at the latest epoch
-        # 'max-va.pth': saved when validation accuracy is at its maximum
+        # 'min-vl.pth': saved when validation loss is at its minimum
         torch.save(ckpt, os.path.join(ckpt_path, 'epoch-last.pth'))
         torch.save(trlog, os.path.join(ckpt_path, 'trlog.pth'))
 
         if aves['vl'] < min_vl:
             min_vl = aves['vl']
-            torch.save(ckpt, os.path.join(ckpt_path, 'max-va.pth'))
+            torch.save(ckpt, os.path.join(ckpt_path, 'min-vl.pth'))
 
         writer.flush()
 
@@ -190,4 +190,4 @@ def main():
 if __name__ == '__main__':
     args = parse_launch_parameters()
     device = acquire_device(args)
-    main(device)
+    main()
