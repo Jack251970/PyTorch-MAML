@@ -6,9 +6,6 @@ from data_provider.data_factory import data_provider
 from models import (Autoformer, Transformer, TimesNet, Nonstationary_Transformer, DLinear, FEDformer, Informer, LightTS,
                     Reformer, ETSformer, Pyraformer, PatchTST, MICN, Crossformer, FiLM, iTransformer, Koopa, TiDE,
                     FreTS, TimeMixer, TSMixer, SegRNN, MambaSimple, Mamba, TemporalFusionTransformer, LSTM)
-from models.quantile_function import (rnn_sf, lstm_cq, lstm_aq, lstm_aq1, lstm_aq2, lstm_aq3, lstm_aq4, lstm_yjqr,
-                                      lstm_ed_yjqr, qsqf_c, qsqf_c1, al_qsqf, al_qsqf_back, qsqf_c_forward)
-from models.quantile_function.qf_func import loss_fn_crps, loss_fn_mse, loss_fn_mae, loss_fn_quantiles, loss_fn_hybrid
 from utils.losses import mape_loss, mase_loss, smape_loss
 
 
@@ -63,22 +60,7 @@ class Exp_Basic(object):
             'TSMixer': TSMixer,
             'SegRNN': SegRNN,
             'TemporalFusionTransformer': TemporalFusionTransformer,
-            'LSTM': LSTM,
-            # quantile functions
-            'QSQF-C': qsqf_c,
-            'RNN-SF': rnn_sf,
-            'LSTM-CQ': lstm_cq,
-            'LSTM-AQ': lstm_aq,
-            'LSTM-YJQR': lstm_yjqr,
-            'LSTM-ED-YJQR': lstm_ed_yjqr,
-            'LSTM-AQ1': lstm_aq1,
-            'LSTM-AQ2': lstm_aq2,
-            'LSTM-AQ3': lstm_aq3,
-            'LSTM-AQ4': lstm_aq4,
-            'QSQF-C1': qsqf_c1,
-            'AL-QSQF': al_qsqf,
-            'AL-QSQF-back': al_qsqf_back,
-            'QSQF-C-forward': qsqf_c_forward,
+            'LSTM': LSTM
         }
         model = model_dict[self.args.model].Model(self.args).float()
         # use multi gpus if enabled
@@ -128,24 +110,6 @@ class Exp_Basic(object):
         return model_optim
 
     def _select_criterion(self):
-        criterion_dict = {
-            'QSQF-C': loss_fn_crps,
-            'RNN-SF': loss_fn_crps,
-            'LSTM-CQ': loss_fn_crps,
-            'LSTM-AQ': loss_fn_crps,
-            'LSTM-YJQR': lstm_yjqr.loss_fn,
-            'LSTM-ED-YJQR': lstm_yjqr.loss_fn,
-            'LSTM-AQ1': loss_fn_crps,
-            'LSTM-AQ2': loss_fn_mse,
-            'LSTM-AQ3': loss_fn_mae,
-            # 'LSTM-AQ4': loss_fn_quantiles,
-            'LSTM-AQ4': loss_fn_hybrid, # for test hybrid loss function
-            'QSQF-C1': loss_fn_crps,
-            'AL-QSQF': loss_fn_hybrid,
-            'AL-QSQF-back': loss_fn_hybrid,
-            'QSQF-C-forward': loss_fn_crps
-        }
-
         loss = self.args.loss
         if loss == 'auto':
             if self.args.task_name == 'classification':
@@ -153,10 +117,7 @@ class Exp_Basic(object):
             elif self.args.task_name != "probability_forecast":
                 return nn.MSELoss()
             else:
-                if self.args.model in criterion_dict:
-                    return criterion_dict[self.args.model]
-                else:
-                    raise NotImplementedError(f'Loss function for model {self.args.model} not implemented')
+                raise NotImplementedError(f'Loss function for model {self.args.model} not implemented')
         else:
             if loss == 'MSE':
                 return nn.MSELoss()
