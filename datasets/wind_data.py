@@ -117,6 +117,7 @@ class DatasetWind(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
+        assert data_path in [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
         self.data_x = None
@@ -143,8 +144,11 @@ class DatasetWind(Dataset):
         self.lag = lag
 
         self.paths = []
-        for i in range(1, 11):
-            self.paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
+        if self.set_type == 0 or self.set_type == 1:  # meta-training
+            for i in range(1, 11):
+                self.paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
+        else:  # meta-testing
+            self.paths.append(os.path.join(root_path, data_path))
         self.__read_data__()
 
     def __read_data__(self):
@@ -180,6 +184,10 @@ class DatasetWind(Dataset):
         n_shot = self.args.n_shot
         n_query = self.args.n_query
 
+        # 如果是测试，默认n_way为1
+        if self.set_type == 2:
+            n_way = 1
+
         # 随机采样n个zone，组成n_way个预测任务
         available_zones = [z for z, arr in zone_windows.items() if arr.shape[0] >= (n_shot + n_query)]
         if len(available_zones) < n_way:
@@ -187,7 +195,10 @@ class DatasetWind(Dataset):
 
         rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
 
+        # 如果是测试，默认采样10000次，因为我们会在多个epoch中充分学习
+        # 而对于测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
         random_times = 10000
+
         for _ in range(random_times):
             # 选取n_way个zone构建一个任务
             chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
