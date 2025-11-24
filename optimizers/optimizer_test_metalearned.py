@@ -25,7 +25,7 @@ def get_search_space():
         'use_gpu': {'_type': 'single', '_value': True},
         'embed': {'_type': 'single', '_value': 'timeF'},
         'freq': {'_type': 'single', '_value': 't'},
-        'batch_size': {'_type': 'single', '_value': 128},
+        'batch_size': {'_type': 'single', '_value': 32},
         'pin_memory': {'_type': 'single', '_value': False},
     }
 
