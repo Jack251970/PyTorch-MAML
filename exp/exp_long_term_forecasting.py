@@ -263,10 +263,10 @@ class Exp_Long_Term_Forecast(Exp_Basic):
     def test(self, setting, test=False, check_folder=False):
         test_data, test_loader = self._get_data(data_flag='test', enter_flag='test', _try_model=self.try_model)
         if test:
-            self.print_content('loading model')
             if self.args.test_checkpoint_path is None:
                 path = os.path.join(self.root_checkpoints_path, setting)
                 best_model_path = path + '/' + self.checkpoints_file
+                self.print_content(f'loading model from: {best_model_path}')
                 if os.path.exists(best_model_path):
                     if self.device == torch.device('cpu'):
                         self.model.load_state_dict(torch.load(best_model_path, map_location=torch.device('cpu')))
@@ -276,6 +276,7 @@ class Exp_Long_Term_Forecast(Exp_Basic):
                     raise FileNotFoundError('You need to train this model before testing it!')
             else:
                 best_model_path = self.args.test_checkpoint_path
+                self.print_content(f'loading model from: {best_model_path}')
                 if os.path.exists(best_model_path):
                     if self.device == torch.device('cpu'):
                         ckpt = torch.load(best_model_path, map_location=torch.device('cpu'))
