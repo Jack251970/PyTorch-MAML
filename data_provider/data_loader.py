@@ -12,6 +12,7 @@ from torch.utils.data import Dataset
 
 from data_provider.m4 import M4Dataset, M4Meta
 from data_provider.uea import subsample, interpolate_missing, Normalizer
+from utils.basic import get_data_range
 from utils.timefeatures import time_features
 
 warnings.filterwarnings('ignore')
@@ -280,8 +281,7 @@ class Dataset_Custom(Dataset):
             print('finetuning')
             flag = 'finetune'
 
-        type_map = {'train': 0, 'val': 1, 'finetune': 2, 'test': 3}
-        self.set_type = type_map[flag]
+        self.flag = flag
         self.data_x = None
         self.data_y = None
 
@@ -330,37 +330,8 @@ class Dataset_Custom(Dataset):
         # reorganize df_raw
         df_raw = df_raw[[date_column] + cols + [self.target]]
 
-        # divide data into train, vali, finetune, test parts
-        num_train = int(len(df_raw) * 0.6)
-        num_finetune = int(len(df_raw) * 0.1)
-        num_test = int(len(df_raw) * 0.2)
-        num_vali = len(df_raw) - num_train - num_finetune - num_test
-
-        # get borders of the data
-        # set_type: {'train': 0, 'val': 1, 'finetune': 2, 'test': 3}
-        # if self.set_type == 0:  # train
-        #     border1 = 0
-        #     border2 = num_train
-        # elif self.set_type == 1:  # val
-        #     border1 = num_train - self.seq_len
-        #     border2 = num_train + num_vali
-        # elif self.set_type == 2:  # test
-        #     border1 = len(df_raw) - num_test - self.seq_len
-        #     border2 = len(df_raw)
-        if self.set_type == 0:  # train
-            border1 = 0
-            border2 = num_train
-        elif self.set_type == 1:  # val
-            border1 = num_train - self.seq_len
-            border2 = num_train + num_vali
-        elif self.set_type == 2:  # finetune
-            border1 = num_train + num_vali - self.seq_len
-            border2 = num_train + num_vali + num_finetune
-        elif self.set_type == 3:  # test
-            border1 = len(df_raw) - num_test - self.seq_len
-            border2 = len(df_raw)
-        else:
-            raise NotImplementedError
+        # get data range
+        border1, border2, num_train = get_data_range(self.flag, len(df_raw), self.seq_len)
 
         # select features
         if self.features == 'M' or self.features == 'MS':
@@ -410,7 +381,7 @@ class Dataset_Custom(Dataset):
         self.data_y = data[border1:border2]
 
         # CHANGE: Apply data augmentation only on train and finetune sets
-        if (self.set_type == 0 or self.set_type == 2) and self.args.augmentation_ratio > 0:
+        if (self.flag == 'train' or self.flag == 'finetune') and self.args.augmentation_ratio > 0:
             self.data_x, self.data_y, augmentation_tags = run_augmentation_single(self.data_x, self.data_y, self.args)
 
         self.data_stamp = data_stamp

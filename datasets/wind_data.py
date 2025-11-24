@@ -7,10 +7,11 @@ from torch.utils.data import Dataset
 
 from datasets.uea import interpolate_missing
 from utils.augmentation import run_augmentation_single
+from utils.basic import get_data_range
 from utils.timefeatures import time_features
 
 
-def read_data(path, target, seq_len, set_type, features, scale, scaler, lag, timeenc, freq, args):
+def read_data(path, target, seq_len, flag, features, scale, scaler, lag, timeenc, freq, args):
     # read raw data
     df_raw = pd.read_csv(path)
 
@@ -32,17 +33,8 @@ def read_data(path, target, seq_len, set_type, features, scale, scaler, lag, tim
     # reorganize df_raw
     df_raw = df_raw[[date_column] + cols + [target]]
 
-    # divide data into train, vali, test parts
-    num_train = int(len(df_raw) * 0.7)
-    num_test = int(len(df_raw) * 0.2)
-    num_vali = len(df_raw) - num_train - num_test
-
-    # get boarders of the data
-    # set_type: {'train': 0, 'val': 1, 'test': 2}
-    border1s = [0, num_train - seq_len, len(df_raw) - num_test - seq_len]
-    border2s = [num_train, num_train + num_vali, len(df_raw)]
-    border1 = border1s[set_type]
-    border2 = border2s[set_type]
+    # get data range
+    border1, border2, num_train = get_data_range(flag, len(df_raw), seq_len)
 
     # select features
     if features == 'M' or features == 'MS':
@@ -57,7 +49,7 @@ def read_data(path, target, seq_len, set_type, features, scale, scaler, lag, tim
 
     # apply standard scaler if needed
     if scale:
-        train_data = df_data[border1s[0]:border2s[0]]
+        train_data = df_data[0:num_train]
         scaler.fit(train_data.values)
         data = scaler.transform(df_data.values)
     else:
@@ -91,7 +83,8 @@ def read_data(path, target, seq_len, set_type, features, scale, scaler, lag, tim
     data_x = data[border1:border2]
     data_y = data[border1:border2]
 
-    if set_type == 0 and args.augmentation_ratio > 0:
+    # CHANGE: Apply data augmentation only on train and finetune sets
+    if (flag == 'train' or flag == 'finetune') and args.augmentation_ratio > 0:
         data_x, data_y, augmentation_tags = run_augmentation_single(data_x, data_y, args)
 
     return data_x, data_y, data_stamp
@@ -118,8 +111,8 @@ class DatasetWind(Dataset):
         # init
         assert flag in ['train', 'test', 'val']
         assert data_path in [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]
-        type_map = {'train': 0, 'val': 1, 'test': 2}
-        self.set_type = type_map[flag]
+
+        self.flag = flag
         self.data_x = None
         self.data_y = None
 
@@ -144,7 +137,7 @@ class DatasetWind(Dataset):
         self.lag = lag
 
         self.paths = []
-        if self.set_type == 0 or self.set_type == 1:  # meta-training
+        if self.flag == 'train' or self.flag == 'val':  # meta-training
             for i in range(1, 11):
                 self.paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
         else:  # meta-testing
@@ -164,7 +157,7 @@ class DatasetWind(Dataset):
         for path, zone_id in zones:
             data_x, data_y, _ = read_data(
                 path, self.target, self.seq_len,
-                self.set_type, self.features, self.scale,
+                self.flag, self.features, self.scale,
                 self.scaler, self.lag, self.timeenc,
                 self.freq, self.args
             )  # [12280, 5], [12280, 5]
@@ -185,7 +178,7 @@ class DatasetWind(Dataset):
         n_query = self.args.n_query
 
         # 如果是测试，默认n_way为1
-        if self.set_type == 2:
+        if self.flag == 'test':
             n_way = 1
 
         # 随机采样n个zone，组成n_way个预测任务
