@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 
 from datasets.uea import interpolate_missing
 from utils.augmentation import run_augmentation_single
-from utils.basic import get_data_range
+from utils.basic_dataset import get_data_range
 from utils.timefeatures import time_features
 
 

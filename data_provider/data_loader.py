@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 
 from data_provider.m4 import M4Dataset, M4Meta
 from data_provider.uea import subsample, interpolate_missing, Normalizer
-from utils.basic import get_data_range
+from utils.basic_dataset import get_data_range
 from utils.timefeatures import time_features
 
 warnings.filterwarnings('ignore')
