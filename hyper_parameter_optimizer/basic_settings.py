@@ -106,8 +106,10 @@ def parse_launch_parameters(_script_mode):
     parser.add_argument('--loss', type=str, default='auto', help='loss function, detect automatically if not set')
     parser.add_argument('--lradj', type=str, default='type1', help='adjust learning rate')
     parser.add_argument('--use_amp', action='store_true', help='use automatic mixed precision training', default=False)
+    parser.add_argument('--train_checkpoint_path', type=str, default=None,
+                        help='save model parameters to checkpoint before training during training')
     parser.add_argument('--test_checkpoint_path', type=str, default=None,
-                        help='load model parameters from checkpoint during testing')
+                        help='load model parameters from checkpoint before testing during testing')
 
     # GPU
     parser.add_argument('--use_gpu', type=bool, default=True, help='use gpu')
@@ -236,6 +238,7 @@ def build_config_dict(_args):
         'loss': _args.loss,
         'lradj': _args.lradj,
         'use_amp': _args.use_amp,
+        'train_checkpoint_path': _args.train_checkpoint_path,
         'test_checkpoint_path': _args.test_checkpoint_path,
 
         # GPU
@@ -359,6 +362,7 @@ def set_args(_args, _config):
     _args.loss = _config['loss']
     _args.lradj = _config['lradj']
     _args.use_amp = _config['use_amp']
+    _args.train_checkpoint_path = _config['train_checkpoint_path']
     _args.test_checkpoint_path = _config['test_checkpoint_path']
 
     # GPU
@@ -558,6 +562,8 @@ def prepare_config(_params, _script_mode=False):
             _args.lradj = _params['lradj']
         if 'use_amp' in _params:
             _args.use_amp = _params['use_amp']
+        if 'train_checkpoint_path' in _params:
+            _args.train_checkpoint_path = _params['train_checkpoint_path']
         if 'test_checkpoint_path' in _params:
             _args.test_checkpoint_path = _params['test_checkpoint_path']
 
@@ -739,7 +745,7 @@ def get_fieldnames(mode='all'):
                       'use_dtw', 'augmentation_ratio', 'jitter', 'scaling', 'permutation', 'randompermutation',
                       'magwarp', 'timewarp', 'windowslice', 'windowwarp', 'rotation', 'spawner', 'dtwwarp',
                       'shapedtwwarp', 'wdba', 'discdtw', 'discsdtw', 'extra_tag', 'lstm_hidden_size', 'lstm_layers',
-                      'num_spline', 'sample_times', 'run_time', 'test_checkpoint_path']
+                      'num_spline', 'sample_times', 'run_time', 'train_checkpoint_path', 'test_checkpoint_path']
 
     # init the fieldnames need to be checked
     _removed_fieldnames = ['model_id', 'mse', 'mae', 'acc', 'smape', 'f_score', 'crps', 'mre', 'naps', 'picp', 'pinaw',
