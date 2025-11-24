@@ -277,7 +277,7 @@ class Dataset_Custom(Dataset):
 
         # CHANGE: If we have train checkpoint path and is in training mode, set flag to 'finetune'
         if self.args.train_checkpoint_path is not None and flag == 'train':
-            print('Finetuning mode on')
+            print('finetuning')
             flag = 'finetune'
 
         type_map = {'train': 0, 'val': 1, 'finetune': 2, 'test': 3}
