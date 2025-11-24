@@ -22,7 +22,7 @@ def parse_launch_parameters(_script_mode):
                         help="model name, options: ['TimesNet', 'Autoformer', 'Transformer', "
                              "'Nonstationary_Transformer', 'DLinear', 'FEDformer', 'Informer', 'LightTS', 'Reformer', "
                              "'ETSformer', 'PatchTST', 'Pyraformer', 'MICN', 'Crossformer', 'FiLM', 'iTransformer', "
-                             "'Koopa', 'QSQF-C', 'RNN-SF', 'LSTM-CQ', 'LSTM-AQ']")
+                             "'Koopa']")
 
     # data loader
     parser.add_argument('--data', type=str, required=_script_mode, default='ETTm1',
