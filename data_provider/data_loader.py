@@ -274,7 +274,13 @@ class Dataset_Custom(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        type_map = {'train': 0, 'val': 1, 'test': 2}
+
+        # CHANGE: If we have train checkpoint path and is in training mode, set flag to 'finetune'
+        if self.args.train_checkpoint_path is not None and flag == 'train':
+            print('Finetuning mode on')
+            flag = 'finetune'
+
+        type_map = {'train': 0, 'val': 1, 'finetune': 2, 'test': 3}
         self.set_type = type_map[flag]
         self.data_x = None
         self.data_y = None
@@ -324,17 +330,37 @@ class Dataset_Custom(Dataset):
         # reorganize df_raw
         df_raw = df_raw[[date_column] + cols + [self.target]]
 
-        # divide data into train, vali, test parts
+        # divide data into train, vali, finetune, test parts
         num_train = int(len(df_raw) * 0.7)
-        num_test = int(len(df_raw) * 0.2)
-        num_vali = len(df_raw) - num_train - num_test
+        num_finetune = int(len(df_raw) * 0.1)
+        num_test = int(len(df_raw) * 0.1)
+        num_vali = len(df_raw) - num_train - num_finetune - num_test
 
-        # get boarders of the data
-        # set_type: {'train': 0, 'val': 1, 'test': 2}
-        border1s = [0, num_train - self.seq_len, len(df_raw) - num_test - self.seq_len]
-        border2s = [num_train, num_train + num_vali, len(df_raw)]
-        border1 = border1s[self.set_type]
-        border2 = border2s[self.set_type]
+        # get borders of the data
+        # set_type: {'train': 0, 'val': 1, 'finetune': 2, 'test': 3}
+        # if self.set_type == 0:  # train
+        #     border1 = 0
+        #     border2 = num_train
+        # elif self.set_type == 1:  # val
+        #     border1 = num_train - self.seq_len
+        #     border2 = num_train + num_vali
+        # elif self.set_type == 2:  # test
+        #     border1 = len(df_raw) - num_test - self.seq_len
+        #     border2 = len(df_raw)
+        if self.set_type == 0:  # train
+            border1 = 0
+            border2 = num_train
+        elif self.set_type == 1:  # val
+            border1 = num_train - self.seq_len
+            border2 = num_train + num_vali
+        elif self.set_type == 2:  # finetune
+            border1 = num_train + num_vali - self.seq_len
+            border2 = num_train + num_vali + num_finetune
+        elif self.set_type == 3:  # test
+            border1 = len(df_raw) - num_test - self.seq_len
+            border2 = len(df_raw)
+        else:
+            raise NotImplementedError
 
         # select features
         if self.features == 'M' or self.features == 'MS':
@@ -349,7 +375,7 @@ class Dataset_Custom(Dataset):
 
         # apply standard scaler if needed
         if self.scale:
-            train_data = df_data[border1s[0]:border2s[0]]
+            train_data = df_data[0:num_train]
             self.scaler.fit(train_data.values)
             data = self.scaler.transform(df_data.values)
         else:
@@ -383,7 +409,8 @@ class Dataset_Custom(Dataset):
         self.data_x = data[border1:border2]
         self.data_y = data[border1:border2]
 
-        if self.set_type == 0 and self.args.augmentation_ratio > 0:
+        # CHANGE: Apply data augmentation only on train and finetune sets
+        if (self.set_type == 0 or self.set_type == 2) and self.args.augmentation_ratio > 0:
             self.data_x, self.data_y, augmentation_tags = run_augmentation_single(self.data_x, self.data_y, self.args)
 
         self.data_stamp = data_stamp
