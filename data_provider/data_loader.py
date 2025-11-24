@@ -331,9 +331,9 @@ class Dataset_Custom(Dataset):
         df_raw = df_raw[[date_column] + cols + [self.target]]
 
         # divide data into train, vali, finetune, test parts
-        num_train = int(len(df_raw) * 0.7)
+        num_train = int(len(df_raw) * 0.6)
         num_finetune = int(len(df_raw) * 0.1)
-        num_test = int(len(df_raw) * 0.1)
+        num_test = int(len(df_raw) * 0.2)
         num_vali = len(df_raw) - num_train - num_finetune - num_test
 
         # get borders of the data
