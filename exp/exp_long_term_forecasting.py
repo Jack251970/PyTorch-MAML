@@ -23,6 +23,18 @@ class Exp_Long_Term_Forecast(Exp_Basic):
         super(Exp_Long_Term_Forecast, self).__init__(root_path, args, try_model, save_process)
 
     def train(self, setting, check_folder=False, only_init=False):
+        if self.args.train_checkpoint_path is not None:
+            best_model_path = self.args.train_checkpoint_path
+            self.print_content(f'loading model from: {best_model_path}')
+            if os.path.exists(best_model_path):
+                if self.device == torch.device('cpu'):
+                    ckpt = torch.load(best_model_path, map_location=torch.device('cpu'))
+                else:
+                    ckpt = torch.load(best_model_path)
+                self.model.load_state_dict(ckpt['encoder_state_dict'])
+            else:
+                raise FileNotFoundError('You need to train this model before testing it!')
+
         if check_folder:
             self._check_folders([self.root_checkpoints_path, self.root_process_path])
 
