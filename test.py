@@ -17,7 +17,7 @@ def main():
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
-    checkpoint_path = './save/meta_wind_5_way_5_shot_2025_11_23_16_01_05'
+    checkpoint_path = './save/meta_wind_5_way_5_shot_2025_11_24_13_16_57'
 
     ##### Model #####
 
