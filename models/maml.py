@@ -189,4 +189,5 @@ class MAML(Module):
 
         self.train(meta_train)
         y_query = torch.stack(y_query)
+
         return y_query
