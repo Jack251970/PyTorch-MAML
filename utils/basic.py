@@ -77,7 +77,6 @@ def get_data(args, data_flag):
         shuffle=shuffle_flag,
         num_workers=args.num_workers,
         drop_last=drop_last,
-        pin_memory=pin_memory,
-        persistent_workers=args.num_workers != 0
+        pin_memory=pin_memory
     )
     return data_set, data_loader
