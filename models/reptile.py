@@ -148,7 +148,9 @@ class Reptile(Module):
             (T: transforms, C: channels, H: height, W: width)
           y_shot (int tensor, [n_episode, n_way * n_shot, H, D]): support set labels.
           meta_train (bool): if True, the model is in meta-training.
-
+        Additional behavior:
+          - During meta_train == True: perform Reptile meta-update (averaged over episodes).
+          - During meta_train == False: only compute per-episode adapted predictions.
         Returns:
           y_query (float tensor, [n_episode, n_way * n_shot, P, D]): predicted logits.
         """
@@ -156,7 +158,7 @@ class Reptile(Module):
         assert x_shot.dim() == 4 and x_query.dim() == 4
         assert x_shot.size(0) == x_query.size(0)
 
-        # a dictionary of parameters that will be updated in the inner loop
+        # meta (initial) parameters: OrderedDict of nn.Parameters -> convert to tensors
         params = OrderedDict(self.named_parameters())
         # Frozen if needed
         # for name in list(params.keys()):
