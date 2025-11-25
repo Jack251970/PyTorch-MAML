@@ -69,7 +69,7 @@ class MAML(Module):
             # 不调用backward，而是直接计算loss关于params的梯度
             # 这样的话，模型的参数暂时不会更新，所有任务都会从同一个初始参数开始进行内环更新
             grads = autograd.grad(loss, params.values(),
-                                  create_graph=(not detach and not False),
+                                  create_graph=not detach,
                                   only_inputs=True, allow_unused=True)
             # parameter update
             updated_params = OrderedDict()
