@@ -9,8 +9,8 @@ from torch import optim
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 
-from models.maml import make
-from models.maml import load
+from models.reptile import make
+from models.reptile import load
 import utils
 from utils.arguments import parse_meta_launch_parameters
 from utils.basic import acquire_device, adjust_learning_rate, get_data
@@ -22,7 +22,7 @@ def main():
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
-    ckpt_name = 'maml_wind'
+    ckpt_name = 'reptile_wind'
     ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)
     if args.tag is None:
         # Use current time as default tag

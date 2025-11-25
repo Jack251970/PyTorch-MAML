@@ -5,7 +5,7 @@ import numpy as np
 from torch import nn
 from tqdm import tqdm
 
-import models
+from models.maml import load
 import utils
 from utils.arguments import parse_meta_launch_parameters
 from utils.basic import acquire_device, get_data
@@ -27,7 +27,7 @@ def main():
         ckpt = torch.load(args.load)
     else:
         ckpt = torch.load(args.load, map_location=torch.device('cpu'))
-    model = models.maml.load(ckpt, args).to(device)
+    model = load(ckpt, args).to(device)
 
     if args.efficient:
         model.go_efficient()
