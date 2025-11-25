@@ -38,16 +38,16 @@ class Reptile(Module):
         feat = self.encoder(x, get_child_dict(params, 'encoder'), episode)
         return feat
 
-    def _inner_iter(self, x, y, params, mom_buffer, episode, detach):
+    def _inner_iter(self, x, y, params, episode, detach):
         """
-        Performs one inner-loop iteration of Reptile including the forward and
-        backward passes and the parameter update.
+        One inner-loop SGD step (first-order, no create_graph).
+        params: OrderedDict of tensors (each requires_grad=True).
+        Returns updated OrderedDict.
 
         Args:
           x (float tensor, [n_way * n_shot, H, D]): per-episode support set.
           y (int tensor, [n_way * n_shot, P, D]): per-episode support set labels.
           params (dict): the model parameters BEFORE the update.
-          mom_buffer (dict): the momentum buffer BEFORE the update.
           episode (int): the current episode index.
           detach (bool): if True, detachs the graph for the current iteration.
 
@@ -82,7 +82,7 @@ class Reptile(Module):
                     updated_param = updated_param.detach().requires_grad_(True)
                 updated_params[name] = updated_param
 
-        return updated_params, mom_buffer
+        return updated_params
 
     def _adapt(self, x, y, params, episode, meta_train):
         """
