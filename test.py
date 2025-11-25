@@ -27,7 +27,7 @@ def main():
         ckpt = torch.load(args.load)
     else:
         ckpt = torch.load(args.load, map_location=torch.device('cpu'))
-    model = models.load(ckpt, args).to(device)
+    model = models.maml.load(ckpt, args).to(device)
 
     if args.efficient:
         model.go_efficient()
