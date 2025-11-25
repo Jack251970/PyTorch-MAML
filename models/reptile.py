@@ -69,7 +69,7 @@ class Reptile(Module):
             # 不调用backward，而是直接计算loss关于params的梯度
             # 这样的话，模型的参数暂时不会更新，所有任务都会从同一个初始参数开始进行内环更新
             grads = autograd.grad(loss, params.values(),
-                                  create_graph=(not detach and not False),
+                                  create_graph=False,
                                   only_inputs=True, allow_unused=True)
             # parameter update
             updated_params = OrderedDict()
@@ -166,6 +166,9 @@ class Reptile(Module):
         #     if not params[name].requires_grad or any(s in name for s in self.args.frozen + ['temp']):
         #         params.pop(name)
 
+        # 用来累积 Reptile 的 φ − θ
+        reptile_update = {name: torch.zeros_like(p) for name, p in params.items()}
+
         y_query = []
 
         # 对于每一个task，进行内环更新并计算查询集上的表现
@@ -185,6 +188,21 @@ class Reptile(Module):
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
             y_query.append(logits_ep)
 
+            # --- Reptile meta update: 累积 φ − θ ---
+            if meta_train:
+                for (name, p0) in params.items():
+                    reptile_update[name] += (updated_params[name] - p0)
+
         self.train(meta_train)
         y_query = torch.stack(y_query)
+
+        # === FINAL META UPDATE (Reptile) ===
+        if meta_train:
+            meta_lr = self.args.learning_rate  # 你需要添加此参数
+            n_tasks = x_shot.size(0)
+
+            # θ ← θ + ε * 평균(φ − θ)
+            for name, p in self.named_parameters():
+                p.data += meta_lr * (reptile_update[name] / n_tasks).data
+
         return y_query
