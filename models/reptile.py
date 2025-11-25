@@ -86,7 +86,8 @@ class Reptile(Module):
 
     def _adapt(self, x, y, params, episode, meta_train):
         """
-        Performs inner-loop adaptation in Reptile.
+        Perform multiple inner steps starting from params, return adapted params.
+        This is purely first-order (no higher-order grads).
 
         Args:
           x (float tensor, [n_way * n_shot, H, D]): per-episode support set.
