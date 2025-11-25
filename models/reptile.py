@@ -113,6 +113,7 @@ class Reptile(Module):
             if isinstance(m, BatchNorm2d) and m.is_episodic():
                 m.reset_episodic_running_stats(episode)
 
+        # 循环进行多次内环更新并返回更新后的参数
         for step in range(self.args.n_step):
             if self.efficient:  # checkpointing
                 def _inner_iter_cp(episode, *state):
@@ -131,7 +132,7 @@ class Reptile(Module):
                     state = tuple(t if t.requires_grad else t.clone().requires_grad_(True)
                                   for t in tuple(params.values()) + tuple(mom_buffer.values()))
                     return state
-                
+
                 state = tuple(params.values()) + tuple(mom_buffer.values())
                 state = cp.checkpoint(_inner_iter_cp, torch.as_tensor(episode), *state)
                 params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
