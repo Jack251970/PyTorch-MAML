@@ -26,7 +26,7 @@ def load(ckpt, args):
 
 
 class MAML(Module):
-    def __init__(self, args, ckpt = None):
+    def __init__(self, args, ckpt=None):
         super(MAML, self).__init__()
         self.args = args
         self.encoder = DLinearModel(args)
