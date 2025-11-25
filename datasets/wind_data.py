@@ -189,7 +189,7 @@ class DatasetWind(Dataset):
         rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
 
         # 如果是测试，默认采样10000次，因为我们会在多个epoch中充分学习
-        # 而对于测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
+        # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
         random_times = 10000
 
         for _ in range(random_times):
