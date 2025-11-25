@@ -112,25 +112,25 @@ class MAML(Module):
             if isinstance(m, BatchNorm2d) and m.is_episodic():
                 m.reset_episodic_running_stats(episode)
 
-        def _inner_iter_cp(episode, *state):
-            """
-            Performs one inner-loop iteration when checkpointing is enabled.
-            The code is executed twice:
-              - 1st time with torch.no_grad() for creating checkpoints.
-              - 2nd time with torch.enable_grad() for computing gradients.
-            """
-            params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
-            mom_buffer = OrderedDict(zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
-
-            detach = not torch.is_grad_enabled()  # detach graph in the first pass
-            self.is_first_pass(detach)
-            params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, int(episode), detach)
-            state = tuple(t if t.requires_grad else t.clone().requires_grad_(True)
-                          for t in tuple(params.values()) + tuple(mom_buffer.values()))
-            return state
-
         for step in range(self.args.n_step):
             if self.efficient:  # checkpointing
+                def _inner_iter_cp(episode, *state):
+                    """
+                    Performs one inner-loop iteration when checkpointing is enabled.
+                    The code is executed twice:
+                      - 1st time with torch.no_grad() for creating checkpoints.
+                      - 2nd time with torch.enable_grad() for computing gradients.
+                    """
+                    params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
+                    mom_buffer = OrderedDict(zip(mom_buffer_keys, state[-len(mom_buffer_keys):]))
+
+                    detach = not torch.is_grad_enabled()  # detach graph in the first pass
+                    self.is_first_pass(detach)
+                    params, mom_buffer = self._inner_iter(x, y, params, mom_buffer, int(episode), detach)
+                    state = tuple(t if t.requires_grad else t.clone().requires_grad_(True)
+                                  for t in tuple(params.values()) + tuple(mom_buffer.values()))
+                    return state
+
                 state = tuple(params.values()) + tuple(mom_buffer.values())
                 state = cp.checkpoint(_inner_iter_cp, torch.as_tensor(episode), *state)
                 params = OrderedDict(zip(params_keys, state[:len(params_keys)]))
@@ -157,6 +157,7 @@ class MAML(Module):
         assert x_shot.size(0) == x_query.size(0)
 
         # a dictionary of parameters that will be updated in the inner loop
+        # 这些数据是新复制的一份，不会影响模型本身的参数
         params = OrderedDict(self.named_parameters())
         # Frozen if needed
         # for name in list(params.keys()):
@@ -175,11 +176,14 @@ class MAML(Module):
                 for m in self.modules():
                     if isinstance(m, BatchNorm2d) and not m.is_episodic():
                         m.eval()
+
             updated_params = self._adapt(x_shot[ep], y_shot[ep], params, ep, meta_train)
+
             # inner-loop validation: 计算更新后参数在查询集上的表现，并记录梯度
             with torch.set_grad_enabled(meta_train):
                 self.eval()
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
+
             y_query.append(logits_ep)
 
         self.train(meta_train)
