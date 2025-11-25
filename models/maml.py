@@ -112,6 +112,7 @@ class MAML(Module):
             if isinstance(m, BatchNorm2d) and m.is_episodic():
                 m.reset_episodic_running_stats(episode)
 
+        # 循环进行多次内环更新并返回更新后的参数
         for step in range(self.args.n_step):
             if self.efficient:  # checkpointing
                 def _inner_iter_cp(episode, *state):
@@ -179,7 +180,7 @@ class MAML(Module):
 
             updated_params = self._adapt(x_shot[ep], y_shot[ep], params, ep, meta_train)
 
-            # inner-loop validation: 计算更新后参数在查询集上的表现，并记录梯度
+            # inner-loop validation: 更新参数之后获得在查询集上的输出，返回并给外部用于计算loss
             with torch.set_grad_enabled(meta_train):
                 self.eval()
                 logits_ep = self._inner_forward(x_query[ep], updated_params, ep)
