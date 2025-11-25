@@ -20,7 +20,7 @@ def get_search_space():
         'task_name': {'_type': 'single', '_value': 'long_term_forecast'},
         'is_training': {'_type': 'single', '_value': 1},
         'train_checkpoint_path': {'_type': 'single',
-                                  '_value': 'save/meta_wind_5_way_5_shot_2025_11_24_13_16_57/min-vl.pth'},
+                                  '_value': 'save/maml_wind_5_way_5_shot_2025_11_24_13_16_57/min-vl.pth'},
         'des': {'_type': 'single', '_value': 'Exp'},
         'use_gpu': {'_type': 'single', '_value': True},
         'embed': {'_type': 'single', '_value': 'timeF'},

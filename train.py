@@ -21,7 +21,7 @@ def main():
     torch.manual_seed(0)
     torch.cuda.manual_seed(0)
 
-    ckpt_name = 'meta_wind'
+    ckpt_name = 'maml_wind'
     ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)
     if args.tag is None:
         # Use current time as default tag
