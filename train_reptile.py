@@ -114,11 +114,12 @@ def main():
             loss = loss_fn(preds, labels)
             aves['tl'].update(loss.item(), 1)
 
-            optimizer.zero_grad()
-            loss.backward()
+            # optimizer.zero_grad()  # 在logits = model(x_shot, x_query, y_shot, meta_train=True)中手动计算了梯度，此处不要清零
+            # loss.backward()  # 不用loss来更新
             for param in optimizer.param_groups[0]['params']:
                 nn.utils.clip_grad_value_(param, 10)
-            optimizer.step()
+            optimizer.step()  # 将手动计算的梯度用于更新模型参数
+            optimizer.zero_grad()  # 清零梯度以备下次使用
 
         # meta-val
         # 在每一代训练结束后，我们会在验证集上评估模型的性能，以便观察模型的泛化能力。

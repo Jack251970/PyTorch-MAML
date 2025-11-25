@@ -202,11 +202,18 @@ class Reptile(Module):
 
         # === FINAL META UPDATE (Reptile) ===
         if meta_train:
-            meta_lr = self.args.learning_rate  # 你需要添加此参数
             n_tasks = x_shot.size(0)
 
-            # θ ← θ + ε * 평균(φ − θ)
+            # 1. 清空梯度
+            for p in self.parameters():
+                if p.grad is not None:
+                    p.grad.zero_()
+
+            # 2. 将 (φ − θ) 当成“梯度”
             for name, p in self.named_parameters():
-                p.data += meta_lr * (reptile_update[name] / n_tasks).data
+                # Reptile formula: θ ← θ + ε(φ - θ)
+                # Optimizer formula: θ ← θ - lr * grad
+                # So grad = -(φ - θ)
+                p.grad = -(reptile_update[name] / n_tasks)
 
         return y_query
