@@ -20,6 +20,8 @@ print(torch.equal(m.weight, params['weight']))  # True
 print(not True and not False)
 print(not False and not False)
 
+last_colum_number = 0
+
 a = [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
      for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 for item in a:
@@ -73,6 +75,15 @@ for item in a:
             return selected_df
 
         filtered_df = load_selected_features(path)
+
+        # 检查一列中是否有超过50%的缺失值，并删除这些列
+        threshold = 0.5 * len(filtered_df)
+        filtered_df = filtered_df.loc[:, filtered_df.isnull().sum() <= threshold]
+
+        colum_number = len(filtered_df.columns)
+        if last_colum_number != 0 and colum_number != last_colum_number:
+            print(f"Column number changed: {last_colum_number} -> {colum_number}")
+
         head = filtered_df.head()
         print(head)
 
