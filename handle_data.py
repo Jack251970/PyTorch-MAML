@@ -72,4 +72,4 @@ for item in tqdm(files):
         save_path = f'./.materials/Penmanshiel_SCADA_2022_WT01-15/filtered_{item}'
         filtered_df.to_csv(save_path, index=False)
     else:
-        print(f"{item} Not Exists")
+        print(f"{path} Not Exists")
