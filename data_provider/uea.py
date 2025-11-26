@@ -109,7 +109,7 @@ def interpolate_missing(y):
     """
     Replaces NaN values in pd.Series `y` using linear interpolation
     """
-    if y.isna().any():
+    if bool(np.asarray(y.isna()).any()):
         y = y.interpolate(method='linear', limit_direction='both')
     return y
 
