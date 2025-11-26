@@ -1,16 +1,15 @@
 import os
 
+from tqdm import tqdm
+
 last_colum_number = 0
 
 a = [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
      for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
-for item in a:
+for item in tqdm(a):
     path = os.path.join('./.materials/Penmanshiel_SCADA_2022_WT01-15/', item)
     if os.path.exists(path):
-        print(f"{item} Exists")
-
         import pandas as pd
-
 
         def load_selected_features(csv_path):
             # 读取数据
@@ -64,8 +63,10 @@ for item in a:
         if last_colum_number != 0 and colum_number != last_colum_number:
             print(f"Column number changed: {last_colum_number} -> {colum_number}")
 
-        head = filtered_df.head()
-        print(head)
+        # rename columns
+        # rename Date and time to date
+        filtered_df = filtered_df.rename(columns=lambda x: x.strip())
+        filtered_df = filtered_df.rename(columns=lambda x: 'date' if x == 'Date and time' else x)
 
         # save to new csv
         save_path = f'./.materials/Penmanshiel_SCADA_2022_WT01-15/filtered_{item}'
