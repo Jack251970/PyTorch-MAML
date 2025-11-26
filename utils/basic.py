@@ -4,6 +4,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 
+from datasets.penmanshiel_data import DatasetPenmanshiel
 from datasets.wind_data import DatasetWind
 
 
@@ -57,6 +58,41 @@ def get_wind_data(args, data_flag):
     batch_size = args.n_episode  # In meta learning, each batch contains multiple tasks
 
     data_set = DatasetWind(
+        args=args,
+        root_path=args.root_path,
+        data_path=args.data_path,
+        flag=data_flag,
+        size=[args.seq_len, args.label_len, args.pred_len],
+        features=args.features,
+        target=args.target,
+        scale=True,
+        scaler=args.scaler,
+        timeenc=timeenc,
+        freq=args.freq,
+        lag=args.lag,
+        seasonal_patterns=args.seasonal_patterns
+    )
+    data_loader = DataLoader(
+        data_set,
+        batch_size=batch_size,
+        shuffle=shuffle_flag,
+        num_workers=args.num_workers,
+        drop_last=drop_last,
+        pin_memory=pin_memory
+    )
+    return data_set, data_loader
+
+
+def get_penmanshiel_data(args, data_flag):
+    # get data information
+    timeenc = 0 if args.embed != 'timeF' else 1
+    pin_memory = args.pin_memory
+
+    shuffle_flag = False if data_flag == 'test' else True
+    drop_last = True
+    batch_size = args.n_episode  # In meta learning, each batch contains multiple tasks
+
+    data_set = DatasetPenmanshiel(
         args=args,
         root_path=args.root_path,
         data_path=args.data_path,
