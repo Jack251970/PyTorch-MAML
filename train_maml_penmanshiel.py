@@ -27,6 +27,7 @@ def main():
     args.enc_in = 57
     args.dec_in = 57
     args.c_out = 57
+    args.data_path = "filtered_Turbine_Data_Penmanshiel_01_2022-01-01_-_2023-01-01.csv"
 
     ckpt_name = 'maml_Penmanshiel'
     ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)

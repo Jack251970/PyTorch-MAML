@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, PowerTransformer
 from torch.utils.data import Dataset
 
-from datasets.uea import interpolate_missing
+from data_provider.uea import interpolate_missing
 from utils.augmentation import run_augmentation_single
 from utils.basic_dataset import get_data_range
 from utils.timefeatures import time_features
