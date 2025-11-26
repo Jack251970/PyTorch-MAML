@@ -4,9 +4,9 @@ from tqdm import tqdm
 
 last_colum_number = 0
 
-a = [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
-     for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
-for item in tqdm(a):
+files = [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
+         for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+for item in tqdm(files):
     path = os.path.join('./.materials/Penmanshiel_SCADA_2022_WT01-15/', item)
     if os.path.exists(path):
         import pandas as pd
