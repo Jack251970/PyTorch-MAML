@@ -47,7 +47,7 @@ def adjust_learning_rate(optimizer, epoch, args):
         return None
 
 
-def get_data(args, data_flag):
+def get_wind_data(args, data_flag):
     # get data information
     timeenc = 0 if args.embed != 'timeF' else 1
     pin_memory = args.pin_memory

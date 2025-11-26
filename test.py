@@ -8,7 +8,7 @@ from tqdm import tqdm
 from models.maml import load
 import utils
 from utils.arguments import parse_meta_launch_parameters
-from utils.basic import acquire_device, get_data
+from utils.basic import acquire_device, get_wind_data
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
         ##### Dataset #####
 
         # meta-test
-        dataset, loader = get_data(args, 'test')
+        dataset, loader = get_wind_data(args, 'test')
         utils.log('meta-test set: {} (x{})'.format(dataset[0][0].shape, len(dataset)))
 
         ##### Evaluation #####
