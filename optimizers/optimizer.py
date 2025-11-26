@@ -30,13 +30,15 @@ def get_search_space():
     dataset_config = {
         'data': {'_type': 'single', '_value': 'custom'},
         'features': {'_type': 'single', '_value': 'MS'},
+        # wind zone
         # 'root_path': {'_type': 'single', '_value': './.materials/'},
         # 'data_path': {'_type': 'choice', '_value': [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
-        # Status_Penmanshiel_01_2022-01-01_-_2023-01-01_1042
+        # 'target': {'_type': 'single', '_value': 'wind'},
+        # penmanshiel turbine
         'root_path': {'_type': 'single', '_value': './.materials/Penmanshiel_SCADA_2022_WT01-15/'},
-        'data_path': {'_type': 'choice', '_value': [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
+        'data_path': {'_type': 'choice', '_value': [f"filtered_Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
                                                     for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]},
-        'target': {'_type': 'single', '_value': 'wind'},
+        'target': {'_type': 'single', '_value': 'Power (kW)'},
         'enc_in': {'_type': 'single', '_value': 5},
         'dec_in': {'_type': 'single', '_value': 5},
         'c_out': {'_type': 'single', '_value': 5},
@@ -69,5 +71,5 @@ def get_search_space():
 
 h = HyperParameterOptimizer(script_mode=False, models=['DLinear'],
                             get_search_space=get_search_space, link_fieldnames_data=link_fieldnames_data)
-h.config_optimizer_settings(root_path='.', data_csv_file='penmanshiel_6112.csv',
+h.config_optimizer_settings(root_path='.', data_csv_file='Penmanshiel2022_6112.csv',
                             scan_all_csv=False, try_model=False, force_exp=True)
