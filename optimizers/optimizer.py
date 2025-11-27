@@ -31,8 +31,8 @@ def get_search_space():
         'data': {'_type': 'single', '_value': 'custom'},
         'features': {'_type': 'single', '_value': 'MS'},
         # wind zone
-        # 'root_path': {'_type': 'single', '_value': './.materials/'},
-        # 'data_path': {'_type': 'choice', '_value': [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
+        # 'root_path': {'_type': 'single', '_value': './.materials/wind/'},
+        # 'data_path': {'_type': 'choice', '_value': [f"Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
         # 'target': {'_type': 'single', '_value': 'wind'},
         # penmanshiel turbine
         'root_path': {'_type': 'single', '_value': './.materials/Penmanshiel_SCADA_2022_WT01-15/'},

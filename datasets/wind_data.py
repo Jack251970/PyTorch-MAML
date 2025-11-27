@@ -111,7 +111,7 @@ class DatasetWind(Dataset):
             self.pred_len = size[2]
         # init
         assert flag in ['train', 'test', 'val']
-        assert data_path in [f"wind/Zone{i}/Zone{i}.csv" for i in range(1, 11)]
+        assert data_path in [f"Zone{i}/Zone{i}.csv" for i in range(1, 11)]
 
         self.flag = flag
         self.data_x = None
@@ -140,7 +140,7 @@ class DatasetWind(Dataset):
         self.paths = []
         if self.flag == 'train' or self.flag == 'val':  # meta-training
             for i in range(1, 11):
-                self.paths.append(os.path.join(root_path, f"wind/Zone{i}/Zone{i}.csv"))
+                self.paths.append(os.path.join(root_path, f"Zone{i}/Zone{i}.csv"))
         else:  # meta-testing
             self.paths.append(os.path.join(root_path, data_path))
         self.__read_data__()

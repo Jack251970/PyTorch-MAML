@@ -35,7 +35,7 @@ def main():
     utils.log('num params: {}'.format(utils.compute_n_params(model)))
 
     for i in range(1, 11):
-        args.data_path = f"wind/Zone{i}/Zone{i}.csv"
+        args.data_path = f"Zone{i}/Zone{i}.csv"
         utils.log('Testing on data: ' + args.data_path)
 
         ##### Dataset #####

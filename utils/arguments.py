@@ -39,8 +39,8 @@ def parse_meta_launch_parameters():
     parser.add_argument('--data', type=str, default='custom',
                         help="dataset type, options: ['ETTh1', 'ETTh2', 'ETTm1', 'ETTm2', 'custom', 'm4', 'PSM', "
                              "'MSL', 'SMAP', 'SMD', 'SWAT', 'UEA']")
-    parser.add_argument('--root_path', type=str, default='./.materials/', help='root path of the data file')
-    parser.add_argument('--data_path', type=str, default='wind/Zone1/Zone1.csv', help='data file')
+    parser.add_argument('--root_path', type=str, default='./.materials/wind/', help='root path of the data file')
+    parser.add_argument('--data_path', type=str, default='/Zone1/Zone1.csv', help='data file')
     parser.add_argument('--features', type=str, default='MS',
                         help='forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:uni-variate '
                              'predict uni-variate, MS:multivariate predict uni-variate')
