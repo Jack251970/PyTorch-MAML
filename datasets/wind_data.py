@@ -150,7 +150,36 @@ class DatasetWind(Dataset):
         Each task samples n_way zones, and for each zone selects n_shot support windows
         and n_query query windows.
         """
+        n_way = self.args.n_way
+        n_shot = self.args.n_shot
+        n_query = self.args.n_query
+
+        # 如果是测试，默认n_way为1
+        if self.flag == 'test':
+            n_way = 1
+
+        # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
+        # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
+        if self.flag == 'train':
+            random_times = 30000
+        else:
+            random_times = 10000
+
+        cache_file_path = os.path.join(self.args.root_path,
+                                       f"cache_GEFCom_{self.flag}_{n_way}_{n_shot}_{n_query}_{self.seq_len}_{self.pred_len}.npz")
+        if os.path.exists(cache_file_path):
+            # Load cached tasks
+            loaded = np.load(cache_file_path, allow_pickle=True)
+            self.tasks = loaded['tasks'].tolist()
+            # slide to random times
+            if len(self.tasks) > random_times:
+                self.tasks = self.tasks[:random_times]
+            print('Loaded cached tasks from {}'.format(cache_file_path))
+            return
+
+        # prepare data per zone
         zones = [(p, i) for i, p in enumerate(self.paths)]
+        self.tasks = []
 
         # Collect windowed sequences per zone
         zone_windows = {}  # zone_id -> list of window arrays (seq_len, seq_len + pre_len, feat_dim)
@@ -172,25 +201,12 @@ class DatasetWind(Dataset):
                 continue
             zone_windows[zone_id] = np.stack(windows, axis=0)  # (num_windows, seq_len + pre_len, feat_dim)
 
-        self.tasks = []
-        n_way = self.args.n_way
-        n_shot = self.args.n_shot
-        n_query = self.args.n_query
-
-        # 如果是测试，默认n_way为1
-        if self.flag == 'test':
-            n_way = 1
-
         # 随机采样n个zone，组成n_way个预测任务
         available_zones = [z for z, arr in zone_windows.items() if arr.shape[0] >= (n_shot + n_query)]
         if len(available_zones) < n_way:
             raise ValueError("Not enough zones with sufficient windows for meta-learning task construction.")
 
-        rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
-
-        # 如果是测试，默认采样10000次，因为我们会在多个epoch中充分学习
-        # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
-        random_times = 10000
+        rng = np.random.default_rng(0)
 
         for _ in range(random_times):
             # 选取n_way个zone构建一个任务
@@ -229,52 +245,12 @@ class DatasetWind(Dataset):
 
             self.tasks.append((x_shot, x_query, y_shot, y_query))
 
+        # save to cache
+        np.savez_compressed(cache_file_path, tasks=self.tasks)
+        print('Saved cached tasks to {}'.format(cache_file_path))
+
     def __len__(self):
         return len(self.tasks)
 
     def __getitem__(self, index):
         return self.tasks[index]
-
-    # def __read_data__(self):
-    #     if self.set_type == 0:
-    #         # training set: use source paths
-    #         data_x_list = []
-    #         data_y_list = []
-    #         data_stamp_list = []
-    #         for source_path in self.source_paths:
-    #             data_x, data_y, data_stamp = read_data(
-    #                 source_path, self.target, self.seq_len,
-    #                 self.set_type, self.features, self.scale,
-    #                 self.scaler, self.lag, self.timeenc,
-    #                 self.freq, self.args
-    #             )
-    #             data_x_list.append(data_x)
-    #             data_y_list.append(data_y)
-    #             data_stamp_list.append(data_stamp)
-    #         self.data_x = np.concatenate(data_x_list, axis=0)
-    #         self.data_y = np.concatenate(data_y_list, axis=0)
-    #         self.data_stamp = np.concatenate(data_stamp_list, axis=0)
-    #     else:
-    #         # testing/validation set: use target path
-    #         self.data_x, self.data_y, self.data_stamp = read_data(
-    #             self.target_path, self.target, self.seq_len,
-    #             self.set_type, self.features, self.scale,
-    #             self.scaler, self.lag, self.timeenc,
-    #             self.freq, self.args
-    #         )
-    #
-    # def __getitem__(self, index):
-    #     s_begin = index
-    #     s_end = s_begin + self.seq_len
-    #     r_begin = s_end - self.label_len
-    #     r_end = r_begin + self.label_len + self.pred_len
-    #
-    #     seq_x = self.data_x[s_begin:s_end]
-    #     seq_y = self.data_y[r_begin:r_end]
-    #     seq_x_mark = self.data_stamp[s_begin:s_end]
-    #     seq_y_mark = self.data_stamp[r_begin:r_end]
-    #
-    #     return seq_x, seq_y, seq_x_mark, seq_y_mark
-    #
-    # def __len__(self):
-    #     return len(self.data_x) - self.seq_len - self.pred_len + 1
