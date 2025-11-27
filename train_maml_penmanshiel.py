@@ -2,6 +2,7 @@ import os
 import random
 import time
 
+import pandas as pd
 import torch
 import torch.nn as nn
 import numpy as np
@@ -13,7 +14,7 @@ from models.maml import make
 from models.maml import load
 import utils
 from utils.arguments import parse_meta_launch_parameters
-from utils.basic import acquire_device, adjust_learning_rate, get_penmanshiel_data
+from utils.basic import acquire_device, adjust_learning_rate, get_penmanshiel_data, handle_features
 
 
 def main():
@@ -24,10 +25,9 @@ def main():
 
     args.root_path = './.materials/Penmanshiel_SCADA_2022_WT01-15/'
     args.target = 'Power (kW)'
-    args.enc_in = 57
-    args.dec_in = 57
-    args.c_out = 57
     args.data_path = "filtered_Turbine_Data_Penmanshiel_01_2022-01-01_-_2023-01-01.csv"
+
+    handle_features(args)
 
     ckpt_name = 'maml_Penmanshiel'
     ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)

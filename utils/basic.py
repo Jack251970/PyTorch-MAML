@@ -1,6 +1,7 @@
 import math
 import os
 
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
@@ -116,3 +117,11 @@ def get_penmanshiel_data(args, data_flag):
         pin_memory=pin_memory
     )
     return data_set, data_loader
+
+
+def handle_features(args):
+    data = pd.read_csv(os.path.join(args.root_path, args.data_path))
+    feature_length = len(data.columns) - 1
+    args.enc_in = feature_length
+    args.dec_in = feature_length
+    args.c_out = feature_length
