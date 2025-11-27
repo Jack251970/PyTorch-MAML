@@ -2,8 +2,6 @@ import os
 
 from tqdm import tqdm
 
-last_colum_number = 0
-
 files = [f"Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
          for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
 for item in tqdm(files):
@@ -59,12 +57,18 @@ for item in tqdm(files):
         threshold = 0.5 * len(filtered_df)
         filtered_df = filtered_df.loc[:, filtered_df.isnull().sum() <= threshold]
 
-        colum_number = len(filtered_df.columns)
-        if last_colum_number != 0 and colum_number != last_colum_number:
-            print(f"Column number changed: {last_colum_number} -> {colum_number}")
+        # check if there are a lot of similar data in one column, if so, delete this column
+        for col in filtered_df.columns:
+            if filtered_df[col].nunique() < 0.1 * len(filtered_df):
+                filtered_df = filtered_df.drop(columns=[col])
 
-        # rename columns
-        # rename Date and time to date
+        # check column number
+        colum_number = len(filtered_df.columns)
+        if colum_number != 31:  # Tested under 2022 WT01
+            print(f"Column number changed: {colum_number} != 31")
+        last_colum_number = colum_number
+
+        # rename columns from Date and time to date
         filtered_df = filtered_df.rename(columns=lambda x: x.strip())
         filtered_df = filtered_df.rename(columns=lambda x: 'date' if x == 'Date and time' else x)
 
