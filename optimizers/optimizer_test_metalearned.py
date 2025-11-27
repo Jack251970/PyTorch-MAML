@@ -19,8 +19,10 @@ def get_search_space():
     default_config = {
         'task_name': {'_type': 'single', '_value': 'long_term_forecast'},
         'is_training': {'_type': 'single', '_value': 0},
+        # 'test_checkpoint_path': {'_type': 'single',
+        #                          '_value': 'save/maml_wind_5_way_5_shot_2025_11_24_13_16_57/min-vl.pth'},
         'test_checkpoint_path': {'_type': 'single',
-                                 '_value': 'save/maml_wind_5_way_5_shot_2025_11_24_13_16_57/min-vl.pth'},
+                                 '_value': 'save/maml_Penmanshiel_5_way_5_shot_2025_11_27_17_16_57/min-vl.pth'},
         'des': {'_type': 'single', '_value': 'Exp'},
         'use_gpu': {'_type': 'single', '_value': True},
         'embed': {'_type': 'single', '_value': 'timeF'},
@@ -32,9 +34,15 @@ def get_search_space():
     dataset_config = {
         'data': {'_type': 'single', '_value': 'custom'},
         'features': {'_type': 'single', '_value': 'MS'},
-        'root_path': {'_type': 'single', '_value': './.materials/wind/'},
-        'data_path': {'_type': 'choice', '_value': [f"Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
-        'target': {'_type': 'single', '_value': 'wind'},
+        # wind zone
+        # 'root_path': {'_type': 'single', '_value': './.materials/wind/'},
+        # 'data_path': {'_type': 'choice', '_value': [f"Zone{i}/Zone{i}.csv" for i in range(1, 11)]},
+        # 'target': {'_type': 'single', '_value': 'wind'},
+        # penmanshiel turbine
+        'root_path': {'_type': 'single', '_value': './.materials/Penmanshiel_SCADA_2022_WT01-15/'},
+        'data_path': {'_type': 'choice', '_value': [f"filtered_Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
+                                                    for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]},
+        'target': {'_type': 'single', '_value': 'Power (kW)'},
         'enc_in': {'_type': 'single', '_value': 5},
         'dec_in': {'_type': 'single', '_value': 5},
         'c_out': {'_type': 'single', '_value': 5},
@@ -67,5 +75,5 @@ def get_search_space():
 
 h = HyperParameterOptimizer(script_mode=False, models=['DLinear'],
                             get_search_space=get_search_space, link_fieldnames_data=link_fieldnames_data)
-h.config_optimizer_settings(root_path='.', data_csv_file='wind_6112.csv',
-                            scan_all_csv=False, try_model=False, force_exp=True)
+h.config_optimizer_settings(root_path='.', data_csv_file='Penmanshiel2022_6112.csv',
+                            scan_all_csv=False, try_model=False, force_exp=False)
