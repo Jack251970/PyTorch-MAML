@@ -173,15 +173,16 @@ class DatasetPenmanshiel(Dataset):
         cache_file_path = os.path.join(self.args.root_path,
                                        f"cache_penmanshiel_{self.flag}_{n_way}_{n_shot}_{n_query}_{self.seq_len}_{self.pred_len}_times.npz")
         for time in range(random_times):
-            if not os.path.exists(cache_file_path.replace('times', f'{time:02d}')):
+            _path = cache_file_path.replace('times', f'{time:02d}')
+            if not os.path.exists(_path):
                 break
 
             # Load cached tasks
-            loaded = np.load(cache_file_path, allow_pickle=True)['tasks'].tolist()
+            loaded = np.load(_path, allow_pickle=True)['tasks'].tolist()
             if len(loaded) != random_interval:
                 raise ValueError("Cached tasks size does not match expected size.")
             self.tasks.extend(loaded)
-            print('Loaded cached tasks from {}'.format(cache_file_path))
+            print('Loaded cached tasks from {}'.format(_path))
 
         # prepare data per zone
         zones = [(p, i) for i, p in enumerate(self.paths)]
