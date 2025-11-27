@@ -253,6 +253,10 @@ class DatasetWind(Dataset):
                 x_query = x_query.reshape(-1, self.seq_len, x_query.shape[-1])  # (n_way * n_query, seq_len, feat_dim)
                 y_shot = y_shot.reshape(-1, self.pred_len, y_shot.shape[-1])  # (n_way * n_shot, pre_len, feat_dim)
                 y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
+                x_shot = x_shot.astype(np.float32)
+                x_query = x_query.astype(np.float32)
+                y_shot = y_shot.astype(np.float32)
+                y_query = y_query.astype(np.float32)
 
                 current_task.append((x_shot, x_query, y_shot, y_query))
 
