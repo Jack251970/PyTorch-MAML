@@ -151,7 +151,37 @@ class DatasetPenmanshiel(Dataset):
         Each task samples n_way zones, and for each zone selects n_shot support windows
         and n_query query windows.
         """
+        n_way = self.args.n_way
+        n_shot = self.args.n_shot
+        n_query = self.args.n_query
+
+        # 如果是测试，默认n_way为1
+        if self.flag == 'test':
+            n_way = 1
+
+        # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
+        # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
+        if self.flag == 'train':
+            random_times = 30000
+        else:
+            random_times = 10000
+
+        cache_file_path = os.path.join(self.args.root_path,
+                                       f"cache_penmanshiel_{self.flag}_{n_way}_{n_shot}_{n_query}_{self.seq_len}_{self.pred_len}.npz")
+        if os.path.exists(cache_file_path):
+            # Load cached tasks
+            loaded = np.load(cache_file_path, allow_pickle=True)
+            self.tasks = loaded['tasks'].tolist()
+            # slide to random times
+            if len(self.tasks) > random_times:
+                self.tasks = self.tasks[:random_times]
+            print('Loaded cached tasks from {} with shape {}×{}×{}'.format(cache_file_path, len(self.tasks),
+                                                                           len(self.tasks[0]), self.tasks[0][0].shape))
+            return
+
+        # prepare data per zone
         zones = [(p, i) for i, p in enumerate(self.paths)]
+        self.tasks = []
 
         # Collect windowed sequences per zone
         zone_windows = {}  # zone_id -> list of window arrays (seq_len, seq_len + pre_len, feat_dim)
@@ -173,28 +203,12 @@ class DatasetPenmanshiel(Dataset):
                 continue
             zone_windows[zone_id] = np.stack(windows, axis=0)  # (num_windows, seq_len + pre_len, feat_dim)
 
-        self.tasks = []
-        n_way = self.args.n_way
-        n_shot = self.args.n_shot
-        n_query = self.args.n_query
-
-        # 如果是测试，默认n_way为1
-        if self.flag == 'test':
-            n_way = 1
-
         # 随机采样n个zone，组成n_way个预测任务
         available_zones = [z for z, arr in zone_windows.items() if arr.shape[0] >= (n_shot + n_query)]
         if len(available_zones) < n_way:
             raise ValueError("Not enough zones with sufficient windows for meta-learning task construction.")
 
-        rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
-
-        # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
-        # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
-        if self.flag == 'train':
-            random_times = 30000
-        else:
-            random_times = 10000
+        rng = np.random.default_rng(self.args.seed)
 
         for _ in range(random_times):
             # 选取n_way个zone构建一个任务
@@ -232,6 +246,10 @@ class DatasetPenmanshiel(Dataset):
             y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
 
             self.tasks.append((x_shot, x_query, y_shot, y_query))
+
+        # save to cache
+        np.savez_compressed(cache_file_path, tasks=self.tasks)
+        print('Saved cached tasks to {}'.format(cache_file_path))
 
     def __len__(self):
         return len(self.tasks)
