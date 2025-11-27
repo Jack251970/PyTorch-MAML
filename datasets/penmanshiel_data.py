@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, PowerTransformer
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 from data_provider.uea import interpolate_missing
 from utils.augmentation import run_augmentation_single
@@ -207,9 +208,9 @@ class DatasetPenmanshiel(Dataset):
         if len(available_zones) < n_way:
             raise ValueError("Not enough zones with sufficient windows for meta-learning task construction.")
 
-        rng = np.random.default_rng(self.args.seed)
+        rng = np.random.default_rng(0)
 
-        for _ in range(random_times):
+        for _ in tqdm(range(random_times), desc='Building tasks for {}'.format(self.flag)):
             # 选取n_way个zone构建一个任务
             chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
 
