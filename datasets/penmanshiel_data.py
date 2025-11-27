@@ -247,7 +247,7 @@ class DatasetPenmanshiel(Dataset):
             self.tasks.append((x_shot, x_query, y_shot, y_query))
 
         # save to cache
-        np.savez_compressed(cache_file_path, tasks=self.tasks)
+        np.savez_compressed(cache_file_path, tasks=np.array(self.tasks, dtype=object))
         print('Saved cached tasks to {}'.format(cache_file_path))
 
     def __len__(self):
