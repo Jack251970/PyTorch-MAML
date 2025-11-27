@@ -161,26 +161,29 @@ class DatasetWind(Dataset):
 
         # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
         # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
+        random_interval = 1000
         if self.flag == 'train':
-            random_times = 30000
+            random_times = 30
         else:
-            random_times = 10000
+            random_times = 10
+
+        self.tasks = []
 
         cache_file_path = os.path.join(self.args.root_path,
-                                       f"cache_GEFCom_{self.flag}_{n_way}_{n_shot}_{n_query}_{self.seq_len}_{self.pred_len}.npz")
-        if os.path.exists(cache_file_path):
+                                       f"cache_GEFCom_{self.flag}_{n_way}_{n_shot}_{n_query}_{self.seq_len}_{self.pred_len}_times.npz")
+        for time in range(random_times):
+            if not os.path.exists(cache_file_path.replace('times', f'{time:02d}')):
+                break
+
             # Load cached tasks
-            loaded = np.load(cache_file_path, allow_pickle=True)
-            self.tasks = loaded['tasks'].tolist()
-            # slide to random times
-            if len(self.tasks) > random_times:
-                self.tasks = self.tasks[:random_times]
+            loaded = np.load(cache_file_path, allow_pickle=True)['tasks'].tolist()
+            if len(loaded) != random_interval:
+                raise ValueError("Cached tasks size does not match expected size.")
+            self.tasks.extend(loaded)
             print('Loaded cached tasks from {}'.format(cache_file_path))
-            return
 
         # prepare data per zone
         zones = [(p, i) for i, p in enumerate(self.paths)]
-        self.tasks = []
 
         # Collect windowed sequences per zone
         zone_windows = {}  # zone_id -> list of window arrays (seq_len, seq_len + pre_len, feat_dim)
@@ -209,46 +212,54 @@ class DatasetWind(Dataset):
 
         rng = np.random.default_rng(0)
 
-        for _ in tqdm(range(random_times), desc='Building tasks for {}'.format(self.flag)):
-            # 选取n_way个zone构建一个任务
-            chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
+        for time in range(random_times):
+            _path = cache_file_path.replace('times', f'{time:02d}')
+            if os.path.exists(_path):
+                continue
 
-            # 对于每个zone，随机选取n_shot+n_query个窗口
-            x_shot_list, x_query_list, y_shot_list, y_query_list = [], [], [], []
-            for class_idx, zone_id in enumerate(chosen):
-                arr = zone_windows[zone_id]
-                perm = rng.permutation(arr.shape[0])  # 随机打乱窗口索引
-                support_idx = perm[:n_shot]  # 选取前n_shot个作为support set
-                query_idx = perm[n_shot:n_shot + n_query]  # 接着n_query个作为query set
+            current_task = []
+            for _ in tqdm(range(random_interval), desc='Building tasks for {}'.format(self.flag)):
+                # 选取n_way个zone构建一个任务
+                chosen = rng.choice(available_zones, size=n_way, replace=False)  # e.g. [4 7 2 3 5]
 
-                support_windows = arr[support_idx]  # (n_shot, seq_len + pre_len, feat_dim)
-                query_windows = arr[query_idx]  # (n_query, seq_len + pre_len, feat_dim)
+                # 对于每个zone，随机选取n_shot+n_query个窗口
+                x_shot_list, x_query_list, y_shot_list, y_query_list = [], [], [], []
+                for class_idx, zone_id in enumerate(chosen):
+                    arr = zone_windows[zone_id]
+                    perm = rng.permutation(arr.shape[0])  # 随机打乱窗口索引
+                    support_idx = perm[:n_shot]  # 选取前n_shot个作为support set
+                    query_idx = perm[n_shot:n_shot + n_query]  # 接着n_query个作为query set
 
-                x_shot = support_windows[:, :self.seq_len, :]  # (n_shot, seq_len, feat_dim)
-                x_query = query_windows[:, :self.seq_len, :]  # (n_query, seq_len, feat_dim)
-                y_shot = support_windows[:, self.seq_len:, :]  # (n_shot, pre_len, feat_dim)
-                y_query = query_windows[:, self.seq_len:, :]  # (n_query, pre_len, feat_dim)
+                    support_windows = arr[support_idx]  # (n_shot, seq_len + pre_len, feat_dim)
+                    query_windows = arr[query_idx]  # (n_query, seq_len + pre_len, feat_dim)
 
-                x_shot_list.append(x_shot)
-                x_query_list.append(x_query)
-                y_shot_list.append(y_shot)
-                y_query_list.append(y_query)
+                    x_shot = support_windows[:, :self.seq_len, :]  # (n_shot, seq_len, feat_dim)
+                    x_query = query_windows[:, :self.seq_len, :]  # (n_query, seq_len, feat_dim)
+                    y_shot = support_windows[:, self.seq_len:, :]  # (n_shot, pre_len, feat_dim)
+                    y_query = query_windows[:, self.seq_len:, :]  # (n_query, pre_len, feat_dim)
 
-            # Stack and reshape to form the task
-            x_shot = np.stack(x_shot_list, axis=0)  # (n_way, n_shot, seq_len, feat_dim)
-            x_query = np.stack(x_query_list, axis=0)  # (n_way, n_query, seq_len, feat_dim)
-            y_shot = np.stack(y_shot_list, axis=0)  # (n_way, n_shot, pre_len, feat_dim)
-            y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query, pre_len, feat_dim)
-            x_shot = x_shot.reshape(-1, self.seq_len, x_shot.shape[-1])  # (n_way * n_shot, seq_len, feat_dim)
-            x_query = x_query.reshape(-1, self.seq_len, x_query.shape[-1])  # (n_way * n_query, seq_len, feat_dim)
-            y_shot = y_shot.reshape(-1, self.pred_len, y_shot.shape[-1])  # (n_way * n_shot, pre_len, feat_dim)
-            y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
+                    x_shot_list.append(x_shot)
+                    x_query_list.append(x_query)
+                    y_shot_list.append(y_shot)
+                    y_query_list.append(y_query)
 
-            self.tasks.append((x_shot, x_query, y_shot, y_query))
+                # Stack and reshape to form the task
+                x_shot = np.stack(x_shot_list, axis=0)  # (n_way, n_shot, seq_len, feat_dim)
+                x_query = np.stack(x_query_list, axis=0)  # (n_way, n_query, seq_len, feat_dim)
+                y_shot = np.stack(y_shot_list, axis=0)  # (n_way, n_shot, pre_len, feat_dim)
+                y_query = np.stack(y_query_list, axis=0)  # (n_way, n_query, pre_len, feat_dim)
+                x_shot = x_shot.reshape(-1, self.seq_len, x_shot.shape[-1])  # (n_way * n_shot, seq_len, feat_dim)
+                x_query = x_query.reshape(-1, self.seq_len, x_query.shape[-1])  # (n_way * n_query, seq_len, feat_dim)
+                y_shot = y_shot.reshape(-1, self.pred_len, y_shot.shape[-1])  # (n_way * n_shot, pre_len, feat_dim)
+                y_query = y_query.reshape(-1, self.pred_len, y_query.shape[-1])  # (n_way * n_query, pre_len, feat_dim)
 
-        # save to cache
-        np.savez_compressed(cache_file_path, tasks=np.array(self.tasks, dtype=object))
-        print('Saved cached tasks to {}'.format(cache_file_path))
+                current_task.append((x_shot, x_query, y_shot, y_query))
+
+            self.tasks.extend(current_task)
+
+            # save to cache
+            np.savez_compressed(_path, tasks=np.array(current_task, dtype=object))
+            print('Saved cached tasks to {}'.format(_path))
 
     def __len__(self):
         return len(self.tasks)
