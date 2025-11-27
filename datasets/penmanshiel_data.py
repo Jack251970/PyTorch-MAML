@@ -175,8 +175,7 @@ class DatasetPenmanshiel(Dataset):
             # slide to random times
             if len(self.tasks) > random_times:
                 self.tasks = self.tasks[:random_times]
-            print('Loaded cached tasks from {} with shape {}×{}×{}'.format(cache_file_path, len(self.tasks),
-                                                                           len(self.tasks[0]), self.tasks[0][0].shape))
+            print('Loaded cached tasks from {}'.format(cache_file_path))
             return
 
         # prepare data per zone
