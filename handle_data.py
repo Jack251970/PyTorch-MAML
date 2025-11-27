@@ -73,7 +73,7 @@ for item in tqdm(files):
         filtered_df = filtered_df.rename(columns=lambda x: 'date' if x == 'Date and time' else x)
 
         # only select 15000 data points
-        filtered_df = filtered_df.head(15000)
+        # filtered_df = filtered_df.head(15000)
 
         # save to new csv
         save_path = f'./.materials/Penmanshiel_SCADA_2022_WT01-15/filtered_{item}'

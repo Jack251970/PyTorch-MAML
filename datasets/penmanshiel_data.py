@@ -189,9 +189,12 @@ class DatasetPenmanshiel(Dataset):
 
         rng = np.random.default_rng(seed=getattr(self.args, 'seed', 0))
 
-        # 如果是测试，默认采样10000次，因为我们会在多个epoch中充分学习
+        # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
         # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
-        random_times = 10000
+        if self.flag == 'train':
+            random_times = 30000
+        else:
+            random_times = 10000
 
         for _ in range(random_times):
             # 选取n_way个zone构建一个任务
