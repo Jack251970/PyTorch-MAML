@@ -25,6 +25,7 @@ def main():
     args.root_path = './.materials/Penmanshiel_SCADA_2022_WT01-15/'
     args.target = 'Power (kW)'
     args.data_path = "filtered_Turbine_Data_Penmanshiel_01_2022-01-01_-_2023-01-01.csv"
+    args.meta_learning_rate = 0.00001
 
     ckpt_name = 'reptile_Penmanshiel'
     ckpt_name += '_{}_way_{}_shot'.format(args.n_way, args.n_shot)
@@ -62,13 +63,13 @@ def main():
         else:
             ckpt = torch.load(args.load, map_location=torch.device('cpu'))
         model = load(ckpt, args).to(device)
-        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+        optimizer = optim.Adam(model.parameters(), lr=args.meta_learning_rate)
         optimizer.load_state_dict(ckpt['training']['optimizer_state_dict'])
         start_epoch = ckpt['training']['epoch'] + 1
         min_vl = ckpt['training']['min_vl']
     else:
         model = make(args).to(device)
-        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+        optimizer = optim.Adam(model.parameters(), lr=args.meta_learning_rate)
         start_epoch = 1
         min_vl = float('inf')
 
