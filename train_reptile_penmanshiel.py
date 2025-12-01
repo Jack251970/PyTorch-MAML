@@ -13,7 +13,7 @@ from models.reptile import make
 from models.reptile import load
 import utils
 from utils.arguments import parse_meta_launch_parameters
-from utils.basic import acquire_device, adjust_learning_rate, get_wind_data
+from utils.basic import acquire_device, adjust_learning_rate, get_penmanshiel_data
 
 
 def main():
@@ -43,12 +43,12 @@ def main():
     ##### Dataset #####
 
     # meta-train
-    train_set, train_loader = get_wind_data(args, 'train')
+    train_set, train_loader = get_penmanshiel_data(args, 'train')
     utils.log('meta-train set: {} (x{})'.format(train_set[0][0].shape, len(train_set)))
 
     # meta-val
     eval_val = True
-    val_set, val_loader = get_wind_data(args, 'val')
+    val_set, val_loader = get_penmanshiel_data(args, 'val')
     utils.log('meta-val set: {} (x{})'.format(val_set[0][0].shape, len(val_set)))
 
     ##### Model and Optimizer #####
