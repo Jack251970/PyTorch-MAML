@@ -34,6 +34,9 @@ def parse_meta_launch_parameters():
     parser.add_argument('--n_step',
                         help='number of inner loop gradient steps',
                         type=int, default=5)
+    parser.add_argument('--meta_learning_rate',
+                        help='outer loop learning rate',
+                        type=float, default=0.0001)
 
     # data loader
     parser.add_argument('--data', type=str, default='custom',
