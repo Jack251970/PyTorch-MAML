@@ -61,12 +61,14 @@ def get_search_space():
 
     model_configs = {
         'DLinear': dlinear_config,
+        'FNF': dlinear_config,
+        'FNFLinear': dlinear_config  # TODO: Try MAE loss?
     }
 
     return [default_config, dataset_config, learning_config, period_config], model_configs
 
 
-h = HyperParameterOptimizer(script_mode=False, models=['DLinear', 'PatchTST', 'FEDformer'],
+h = HyperParameterOptimizer(script_mode=False, models=['FNF', 'DLinear', 'PatchTST', 'FEDformer'],
                             get_search_space=get_search_space, link_fieldnames_data=link_fieldnames_data)
 h.config_optimizer_settings(root_path='.', data_csv_file='Penmanshiel2022_6112.csv',
                             scan_all_csv=False, try_model=False, force_exp=False)
