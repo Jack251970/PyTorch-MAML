@@ -16,8 +16,8 @@ for item in tqdm(files):
             # 关键词映射：每类特征对应关键字列表（不区分大小写）
             keywords = {
                 "time": ["time", "date"],
-                "wind_speed": ["wind speed", "density adjusted wind"],
-                "wind_direction": ["wind direction"],
+                "wind_speed": ["wind speed", "density adjusted wind"],  # 1
+                "wind_direction": ["wind direction"],  # 2
                 "nacelle": ["nacelle position"],
                 # "setpoint": ["power setpoint"],
                 # "capacity": ["available capacity"],
@@ -25,10 +25,10 @@ for item in tqdm(files):
                 # "reactive_power": ["reactive power"],
                 # "voltage": ["voltage"],
                 # "current": ["current"],
-                "ambient_temp": ["ambient temperature"],
-                "nacelle_temp": ["nacelle temperature"],
-                "stator_temp": ["stator temperature"],
-                "gear_oil_temp": ["gear oil temperature"],
+                "stator_temp": ["stator temperature"],  # 3
+                "gear_oil_temp": ["gear oil temperature"],  # 4
+                "ambient_temp": ["ambient temperature"],  # 5
+                "nacelle_temp": ["nacelle temperature"],  # 6
             }
 
             # 自动筛选字段
