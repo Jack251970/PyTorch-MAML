@@ -13,5 +13,5 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu13
 
 Install other dependencies:
 ```bazaar
-pip3 install tqdm tensorboardx scipy pandas scikit-learn einops matplotlib seaborn properscoring sktime
+pip3 install tqdm tensorboardx scipy pandas scikit-learn einops matplotlib seaborn properscoring sktime dtaidistance
 ```
