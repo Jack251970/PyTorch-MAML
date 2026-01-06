@@ -22,7 +22,7 @@ num_turbines = len(power_list)
 dtw_matrix = pd.DataFrame(index=[f"Turbine_{i+1:02d}" for i in range(num_turbines)],
                           columns=[f"Turbine_{i+1:02d}" for i in range(num_turbines)])
 for i in range(num_turbines):
-    for j in range(num_turbines):
+    for j in tqdm(range(num_turbines)):
         if i == j:
             dtw_matrix.iloc[i, j] = 0.0
         elif pd.isna(dtw_matrix.iloc[i, j]):
