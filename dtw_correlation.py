@@ -3,8 +3,10 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
+
+num_turbines = [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 files = [f"filtered_Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
-         for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+         for i in num_turbines]
 
 power_list = []
 for item in tqdm(files):
@@ -18,16 +20,24 @@ for item in tqdm(files):
 
 # Calculate Dynamic Time Warping (DTW) distance between each pair of turbines
 from dtaidistance import dtw
-num_turbines = len(power_list)
-dtw_matrix = pd.DataFrame(index=[f"Turbine_{i+1:02d}" for i in range(num_turbines)],
-                          columns=[f"Turbine_{i+1:02d}" for i in range(num_turbines)])
-for i in range(num_turbines):
-    for j in tqdm(range(num_turbines)):
+dtw_matrix = pd.DataFrame(index=[f"Turbine_{i:02d}" for i in num_turbines],
+                          columns=[f"Turbine_{i:02d}" for i in num_turbines])
+for i in range(len(num_turbines)):
+    for j in tqdm(range(len(num_turbines))):
         if i == j:
             dtw_matrix.iloc[i, j] = 0.0
         elif pd.isna(dtw_matrix.iloc[i, j]):
-            distance = dtw.distance(power_list[i]['Power (kW)'].values,
-                                    power_list[j]['Power (kW)'].values)
+            # Only select 1000 points for faster computation
+            power_data1 = power_list[i]['Power (kW)'].values[::1000]
+            power_data2 = power_list[j]['Power (kW)'].values[::1000]
+            # Check if NaN values exist
+            # Use linear interpolation to fill NaN values
+            if pd.isna(power_data1).any():
+                power_data1 = pd.Series(power_data1).interpolate().values
+            if pd.isna(power_data2).any():
+                power_data2 = pd.Series(power_data2).interpolate().values
+            distance = dtw.distance(power_data1, power_data2)
+            print(f"DTW distance between Turbine_{i} and Turbine_{j}: {distance}")
             dtw_matrix.iloc[i, j] = distance
             dtw_matrix.iloc[j, i] = distance  # Symmetric matrix
 # Draw the heatmap of DTW distance matrix
