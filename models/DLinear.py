@@ -55,9 +55,8 @@ class Model(nn.Module):
                 configs.enc_in * configs.seq_len, configs.num_class)
 
     def encoder(self, x):
-        seasonal_init, trend_init = self.decompsition(x)
-        seasonal_init, trend_init = seasonal_init.permute(
-            0, 2, 1), trend_init.permute(0, 2, 1)
+        seasonal_init, trend_init = self.decompsition(x)  # [32, 96, 57], [32, 96, 57]
+        seasonal_init, trend_init = seasonal_init.permute(0, 2, 1), trend_init.permute(0, 2, 1)  # [32, 57, 96], [32, 57, 96]
         # if self.individual:
         #     seasonal_output = torch.zeros([seasonal_init.size(0), seasonal_init.size(1), self.pred_len],
         #                                   dtype=seasonal_init.dtype).to(seasonal_init.device)
@@ -69,10 +68,10 @@ class Model(nn.Module):
         #         trend_output[:, i, :] = self.Linear_Trend[i](
         #             trend_init[:, i, :])
         # else:
-        seasonal_output = self.Linear_Seasonal(seasonal_init)
-        trend_output = self.Linear_Trend(trend_init)
-        x = seasonal_output + trend_output
-        return x.permute(0, 2, 1)
+        seasonal_output = self.Linear_Seasonal(seasonal_init)  # [32, 57, 96]
+        trend_output = self.Linear_Trend(trend_init)  # [32, 57, 96]
+        x = seasonal_output + trend_output  # [32, 57, 96]
+        return x.permute(0, 2, 1)  # [32, 96, 57]
 
     def forecast(self, x_enc):
         # Encoder
