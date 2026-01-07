@@ -58,6 +58,8 @@ def get_search_space():
     dlinear_config = {
         'd_model': {'_type': 'single', '_value': 128},
         # 'individual': {'_type': 'single', '_value': True},
+        'custom_params': {'_type': 'single', '_value': 'muti_layer'},
+        'e_layers': {'_type': 'choice', '_value': [2, 3]},
     }
 
     model_configs = {
