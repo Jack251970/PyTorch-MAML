@@ -36,8 +36,9 @@ def get_search_space():
         # 'target': {'_type': 'single', '_value': 'wind'},
         # penmanshiel turbine
         'root_path': {'_type': 'single', '_value': './.materials/Penmanshiel_SCADA_2022_WT01-15/'},
-        'data_path': {'_type': 'choice', '_value': [f"filtered_Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
-                                                    for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]},
+        'data_path': {'_type': 'choice',
+                      '_value': [f"filtered_Turbine_Data_Penmanshiel_{i:02d}_2022-01-01_-_2023-01-01.csv"
+                                 for i in [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]},
         'target': {'_type': 'single', '_value': 'Power (kW)'},
     }
 
