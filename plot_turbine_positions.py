@@ -19,30 +19,26 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Reuse detection helper from calculate_coordinate if available
-try:
-    from calculate_coordinate import detect_columns
-except Exception:
-    # fallback simple detector
-    def detect_columns(df: pd.DataFrame):
-        cols = list(df.columns)
-        lower = {c: c.lower() for c in cols}
-        id_col = None
-        for k in ["alternative title", "alternative_title", "title", "identity", "id", "turbine"]:
-            for c in cols:
-                if c.lower() == k or k in c.lower():
-                    id_col = c
-                    break
-            if id_col:
-                break
-        lat_col = None
-        lon_col = None
+def detect_columns(df: pd.DataFrame):
+    cols = list(df.columns)
+    lower = {c: c.lower() for c in cols}
+    id_col = None
+    for k in ["alternative title", "alternative_title", "title", "identity", "id", "turbine"]:
         for c in cols:
-            cl = c.lower()
-            if "lat" in cl and lat_col is None:
-                lat_col = c
-            if ("lon" in cl or "long" in cl) and lon_col is None:
-                lon_col = c
-        return id_col, lat_col, lon_col
+            if c.lower() == k or k in c.lower():
+                id_col = c
+                break
+        if id_col:
+            break
+    lat_col = None
+    lon_col = None
+    for c in cols:
+        cl = c.lower()
+        if "lat" in cl and lat_col is None:
+            lat_col = c
+        if ("lon" in cl or "long" in cl) and lon_col is None:
+            lon_col = c
+    return id_col, lat_col, lon_col
 
 
 METERS_PER_DEG_LAT = 111132.954  # approximate
@@ -169,6 +165,10 @@ def main():
     os.makedirs(os.path.dirname(out_csv) or ".", exist_ok=True)
     df_pos[[lat_col, lon_col, "x_m", "y_m"]].to_csv(out_csv, index=False)
     print(f"Saved positions CSV to {out_csv}")
+
+    # Keep original data in output CSV
+    if id_col and id_col in df.columns:
+        df_pos[id_col] = df[id_col]
 
     # Plot
     plot_and_save(df_pos, labels, args.output)
