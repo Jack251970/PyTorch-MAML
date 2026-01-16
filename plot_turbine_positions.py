@@ -18,6 +18,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
 # Reuse detection helper from calculate_coordinate if available
 def detect_columns(df: pd.DataFrame):
     cols = list(df.columns)
