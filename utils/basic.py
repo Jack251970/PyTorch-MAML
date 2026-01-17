@@ -101,7 +101,7 @@ def get_penmanshiel_data(args, data_flag):
         size=[args.seq_len, args.label_len, args.pred_len],
         features=args.features,
         target=args.target,
-        scale=True,
+        scale=False,
         scaler=args.scaler,
         timeenc=timeenc,
         freq=args.freq,
