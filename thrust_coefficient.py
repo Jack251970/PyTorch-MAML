@@ -14,6 +14,21 @@ def get_thrust_coefficient(wind_speed):
     return np.interp(wind_speed, ct_table['ws'], ct_table['ct'])
 
 
-# 示例：获取 8.5 m/s 时的推力系数
-# current_ct = get_thrust_coefficient(8.5)
-# print(f"Wind Speed 8.5 m/s -> Ct: {current_ct:.3f}")
+# 绘制出speed与trust coefficient的关系曲线
+if __name__ == "__main__":
+    # 示例：获取 8.5 m/s 时的推力系数
+    current_ct = get_thrust_coefficient(8.5)
+    print(f"Wind Speed 8.5 m/s -> Ct: {current_ct:.3f}")
+
+    import matplotlib.pyplot as plt
+
+    wind_speeds = np.linspace(0, 25, 100)
+    ct_values = get_thrust_coefficient(wind_speeds)
+
+    plt.plot(wind_speeds, ct_values, label='Thrust Coefficient (Ct)')
+    plt.xlabel('Wind Speed (m/s)')
+    plt.ylabel('Thrust Coefficient (Ct)')
+    plt.title('Wind Speed vs Thrust Coefficient for Senvion MM82')
+    plt.grid()
+    plt.legend()
+    plt.show()

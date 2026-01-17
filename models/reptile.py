@@ -5,8 +5,8 @@ import torch.autograd as autograd
 import torch.utils.checkpoint as cp
 from torch import nn
 
-from .encoders.dlinear import DLinearModel
-from .modules import get_child_dict, Module, BatchNorm2d
+from encoders.dlinear import DLinearModel
+from modules import get_child_dict, Module, BatchNorm2d
 
 
 def make(args):
