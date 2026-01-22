@@ -178,7 +178,12 @@ class DatasetPenmanshiel(Dataset):
                 break
 
             # Load cached tasks
-            loaded = np.load(_path, allow_pickle=True)['tasks'].tolist()
+            try:
+                loaded = np.load(_path, allow_pickle=True)['tasks'].tolist()
+            except:
+                # Delete error cached data
+                os.remove(_path)
+                break
             if len(loaded) != random_interval:
                 raise ValueError("Cached tasks size does not match expected size.")
             self.tasks.extend(loaded)
