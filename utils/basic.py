@@ -66,7 +66,8 @@ def get_wind_data(args, data_flag):
         size=[args.seq_len, args.label_len, args.pred_len],
         features=args.features,
         target=args.target,
-        scale=True,
+        # CHANGE: We do not use scaling since we need to use the original values for wake effect calculation
+        scale=False,
         scaler=args.scaler,
         timeenc=timeenc,
         freq=args.freq,
