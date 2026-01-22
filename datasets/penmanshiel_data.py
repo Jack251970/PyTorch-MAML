@@ -162,7 +162,8 @@ class DatasetPenmanshiel(Dataset):
 
         # 如果是测试，默认采样30000次，因为我们会在多个epoch中充分学习
         # 而对于评估和测试，默认采样10000次，因为我们希望在一个epoch中就能充分评估模型表现
-        random_interval = 1000
+        # Warning: Revert to 1000 when testing
+        random_interval = 10
         if self.flag == 'train':
             random_times = 30
         else:
