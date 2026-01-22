@@ -240,6 +240,16 @@ class DatasetPenmanshiel(Dataset):
                     y_shot = support_windows[:, self.seq_len:, :]  # (n_shot, pre_len, feat_dim)
                     y_query = query_windows[:, self.seq_len:, :]  # (n_query, pre_len, feat_dim)
 
+                    # 将chosen zone的标签增加到第一个特征里面用于之后的尾流计算
+                    x_shot = np.concatenate([np.full((x_shot.shape[0], x_shot.shape[1], 1), zone_id), x_shot],
+                                            axis=-1)
+                    x_query = np.concatenate([np.full((x_query.shape[0], x_query.shape[1], 1), zone_id), x_query],
+                                             axis=-1)
+                    y_shot = np.concatenate([np.full((y_shot.shape[0], y_shot.shape[1], 1), zone_id), y_shot],
+                                            axis=-1)
+                    y_query = np.concatenate([np.full((y_query.shape[0], y_query.shape[1], 1), zone_id), y_query],
+                                             axis=-1)
+
                     x_shot_list.append(x_shot)
                     x_query_list.append(x_query)
                     y_shot_list.append(y_shot)
